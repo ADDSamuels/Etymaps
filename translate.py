@@ -1,3 +1,4 @@
+###Copyright ©2024 Alexander Samuels
 import xml.etree.ElementTree as ET
 import re
 import unicodedata
