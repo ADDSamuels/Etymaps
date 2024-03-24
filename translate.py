@@ -1,4 +1,4 @@
-###Copyright ©2024 Alexander Samuels
+###Copyright ©2024 Alexander Samuels###
 import xml.etree.ElementTree as ET
 import re
 import unicodedata
@@ -11,13 +11,7 @@ def returnTag(root,tag):
         else:
             print("Achtung: multiple "+tag+"s!")
     print("Achtung: '"+tag+"' does not exist!")
-def swapDualDelimiters(subEntry):
-##    subEntry2=[]
-##    if len(subEntry)>0:
-##        for line in subEntry:
-##            subEntry2.append(line.replace("''{{","{{<'>").replace("}}''","<'>}}").replace("''[[","[[<'>").replace("]]''","<'>]]"))
-##    return subEntry2
-    return subEntry
+
 def getLangCode(inputLang):
     try:
         canonIndex=langCanon.index(inputLang)
@@ -33,27 +27,13 @@ def initnPage():
     titletag="<ti>"+title.text+"</ti>"
     nPage=["<pa>",titletag,"</pa>"]
     nPointer=2
-    #print(f"nPage={nPage}")
-#def lineFind(line,Char):
- #   return len
-def convertTags(line):
-    a=1
-    #print(nPage)
+
 def quotRepl(line):
-##    while line.find("'''")>=0:
-##        line=line.replace("'''","[[<3>",1)
-##        line=line.replace("'''","<3>]]",1)
-##    while line.find("''")>=0:
-##        line=line.replace("''","[[<2>",1)
-##        line=line.replace("''","<2>]]",1)
     line=line.replace("'''","")
     line=line.replace("''","")
     return line
 def addToPage(tag,line):
-    #print(nPage)
     global nPointer,nPage
-    #print(nPage)
-    #print(nPointer)
     subtag1="<"+tag+">"
     subtag2="<"+"/"+tag+">"
     if len(line)>0:
@@ -72,7 +52,6 @@ def addToPage3(tag,line,lenTag):
 def addToPage2(tag,line,lenTag):
     lenTag+=1
     addToPage3(tag,line,lenTag)
-    #addToPage2(tag,(line.replace("}}","").replace("{{",""))[lenTag:])
 def atp(tag,line,lenTag):
     addToPage3("of"+tag,line,lenTag)
 def lineCut(line,char,lineSide):
@@ -82,10 +61,10 @@ def lineCut(line,char,lineSide):
         else:
             lineMem=line[0][line[0].find(char)+2:]
         if len(lineMem)>0:
-            if lineSide==1:#{{,[[
+            if lineSide==1:#eg, {{,[[
                 line.insert(1,(line[0])[line[0].find(char):])
                 line[0]=(line[0])[:line[0].find(char)]
-            elif lineSide==2:#}} , ]]
+            elif lineSide==2:#eg, }} , ]]
                 line.insert(1,(line[0])[line[0].find(char)+2:])
                 line[0]=(line[0])[:line[0].find(char)+2]
         return line.copy()
@@ -372,18 +351,15 @@ def ofForm(tag,a,b):
         atp("v",a,b)
     elif tag=="word-final anusvara form of":
         atp("wfa",a,b)
-###code for 
-def has_cyrillic(text):
+    elif tag.find("form of")>0:
+        addToPage2("x",a,b)
+def has_cryillic(text):
     return bool(re.search('[\u0400-\u04FF]', text))    
 def remove_diacritics(text):
     return ''.join(char for char in unicodedata.normalize('NFD', text) if unicodedata.category(char) != 'Mn')
-
 def make_entry_name(text):
-    # Remove diacritics from vowels and consonants
     text = re.sub(r'[aeɛioɵuʉt̪s̪]+[\u0300-\u036F]*', lambda match: remove_diacritics(match.group()), text)
-
     return text
-##
 def etymTag(tag,line,lT,hasBar):
     if hasBar:
         if tag=="inh" or tag=="inherited" or tag=="inh" or tag=="inh-lite":#included template inh+, inh-lite
@@ -454,7 +430,7 @@ def etymTag(tag,line,lT,hasBar):
             addToPage2("aph",line,lT)
         elif tag=="causative":
             addToPage2("cau",line,lT)
-        #elif tag=="
+        
 
 
 
@@ -499,24 +475,20 @@ def inputData(cutLines,caseN,header):
         tag=""
         if line.find("{{")==-1 and line.find("[[")==-1:
             if caseN!=0:
-                a=1
                 if caseN==3 and "Etymology"==headingList[-1]:
                     pass
                 else:
                     pass#print(headingList[-1])
         elif line[:2]=="{{":
             tag,hasBar=getTag(line)
-            #print(f"tag={tag}")
             lT=len(tag)
-            #print(f"line2|{line}")
-            #print(f"tag:{tag}\tinline:{line}")
             if tag=="also" and hasBar:
                 if line.find("|sc=")>=0 or line.find("|uni=")>=0 or line.find("|uniN=")>=0 or line.find("|scN=")>=0:
                     print(f"@also={line}")
                 else:
                     addToPage("a",line.replace("}}","").replace("{{","")[5:])#need to add parser for appendix
             elif caseN==3:
-                #print(headingList[-1])
+
                 if "Etymology"==(headingList[-1])[:9]:
                     etymTag(tag,line,lT,hasBar)
                 elif "Alternative forms"==headingList[-1]:
@@ -533,34 +505,25 @@ def inputData(cutLines,caseN,header):
                         
                 #pass#Etymology
             elif caseN==4:
-                #print("casen woo")
-                #print(f"line3|{line}")
                 line=re.sub(r'\|sort=.+?\|','|',line)
                 line=re.sub(r'\|title=.+?\|','|',line)
                 line=re.sub(r'\|sc=.+?\|','|',line)
                 line=re.sub(r'\|collapse=.+?\|','|',line)
-                #print(f"line4|{line}")
                 if "Derived terms"==headingList[-1]:
                     if tag[:3]=="col" or tag[:3]=="der":
-                        #print(f"tag={tag}\tline={line}")
                         cutLines=line.split('|')
                         clLang=cutLines[1].replace("{{","").replace("}}","")
                         clI=0
-                        #print("lolop"+str(cutLines))
-                        #print(f"clLang={clLang}")
                         for cutLine in cutLines:
                             if clI==1:
-                                #print(cutLine)
                                 cutLine=re.sub(r'[{{].+[}}].','',cutLine).replace(r"/","")
                                 cutLine=re.sub(r'\].+\[','|',cutLine)
                                 cutLine=cutLine.replace("[","").replace("]","").replace("{{","").replace("}}","")
                                 cutLine=[cutLine.split("|")]
-                                #print(cutLine)
                                 clJ=0
                                 for cutLine2 in cutLine:
                                     if len(cutLine2[clJ])>0:
                                         clmem="{{d|"+clLang+"|"+cutLine2[clJ]+"}}"
-                                        #print(clmem)
                                         addToPage2("d",clmem,1)
                                     clJ+=1
                             clI=1
@@ -571,19 +534,17 @@ def inputData(cutLines,caseN,header):
                     if tag=="desc" or tag=="descendant":
                         line=re.sub(r'\|bor=.+?\|','|',line)
                         line=line.split("|")
-                        #print(f"desc?{line}")
                         if len(line)>=3:
                             clmem=line[0]+"|"+line[1]+"|"+line[2]+"}}"
                             addToPage2("v",clmem,lT)
                 elif "Translations"==headingList[-1]:
                     if tag=="t" or tag=="t+" or tag=="tt" or tag=="tt+":
                         line=re.sub(r'\|sc=.+?\|','|',line)
-                        #line=re.sub(r'\|tr=.+?\|','|',line)
                         line=re.sub(r'\|alt=.+?\|','|',line)
                         line=re.sub(r'\|lit=.+?\|','|',line)
                         line=re.sub(r'\|id=.+?\|','|',line)
+                        #keeping translations (tr=...)
                         line=line.split("|")
-                        #print(line)
                         if len(line)==3:
                             transMem="{{t|"+line[1]+"|"+line[2]
                         elif len(line)>=4:
@@ -601,6 +562,7 @@ def inputData(cutLines,caseN,header):
                             transMem=line[0]+"|"+line[1]
                             subtag1="<tr><trti>"+line[1]+r"</trti>"
                             subtag2="</tr>"
+
                             nPage.insert(nPointer,subtag1)
                             nPointer+=1
                             nPage.insert(nPointer,subtag2)
@@ -622,14 +584,10 @@ def inputData(cutLines,caseN,header):
         i+=1
     nPointer+=nPointMem
 def formatCase(subEntry,caseN,header):
-    openBracket=0
-    #if len(subEntry)>0:
-        #print(f"subEntry={subEntry}")
     cutLines=[]
     newLine=[]
     mem=""
     for line in subEntry:
-        #print(f"1:{line}")
         line=quotRepl(line)
         newLine=[]
         line=[line]## I need to properly format html tags like, for example <math></math>
@@ -638,13 +596,7 @@ def formatCase(subEntry,caseN,header):
             newLine.append(line[0])
             line.pop(0)
         i=0
-##        for line2 in newLine:
-##            brackets=[line2.count("{{"),line2.count("[["),line2.count("}}"),line2.count("]]")]
-##            brackets[0]
         cutLines=cutLines.copy()+newLine.copy()
-    
-    #if len(newLine)>0:
-       # print(f"cutLines={cutLines}")
     enclosers=[]
     enclosersI=[]
     enclosersJ=[]
@@ -658,17 +610,13 @@ def formatCase(subEntry,caseN,header):
         if not any(bracket in line for bracket in brackets):
             if len(enclosers)==0:
                 line=line.replace("\t","").lower()
-                #print(f"line={line}")
                 cutLines2.append(line)
             else:
                 mem=mem+line
-                #print(f"line'{line}")
         else:
             for char in line:
-                #print(oldChar+","+char)
                 sumChar=oldChar+char
                 if sumChar in brackets:
-                    #print(f"sumChar{sumChar}")
                     if sumChar=="{{"or sumChar=="[[":
                         enclosers.append(sumChar)
                         enclosersI.append(i)
@@ -679,7 +627,6 @@ def formatCase(subEntry,caseN,header):
                             for i2 in range(enclosersI[-1],i+1):
                                 if i2==enclosersI[-1]:
                                     if i2==i:
-                                        #print("kurzschnitt")
                                         mem=(cutLines[i2])[enclosersJ[-1]:j+1]
                                     else:
                                         mem=(cutLines[i2])[enclosersJ[-1]:]
@@ -693,24 +640,14 @@ def formatCase(subEntry,caseN,header):
                             cutLines2.append(mem)
                         except:
                             print(f"i=({i}),i2=({i2}) ,j=({j}) \n line={line}\n cutLines={cutLines}\n enclosers={enclosers}\n enclosersI={enclosersI}\n enclosersJ={enclosersJ}") 
-##                        enclosers.pop()
-##                        enclosersI.pop()
-##                        enclosersJ.pop()
-##                        cutLines2.append(mem)
-                        #print(f"mem={mem}")
                 oldChar=char
                 j+=1
         i+=1
-    #print("\n")
-    #print(cutLines2)
     inputData(cutLines2,caseN,header)
 def loopThruPage(page):
-    #print(f"loopThruPage{nPage}")
     page2=page.split("\n")
     page2=list(filter(('').__ne__, page2))
-    #print(page2)
     subEntry=[]
-    lineX=0
     j=0
     urequalN=0
     mode=""
@@ -742,7 +679,6 @@ def loopThruPage(page):
                 case 0:
                     #print("\t\t\t\t\n\n\n\nHelloworld\n\n\n\n")
                     #print(f"case{urequalN}:{subEntry}\turmode:{urmode}")
-                    subEntry=swapDualDelimiters(subEntry)
                     formatCase(subEntry,urequalN,"")
                 case 1:
                     print("error")
@@ -752,12 +688,10 @@ def loopThruPage(page):
                     #print(lang)
                     #if len(str(subEntry))>2:
                      #   print("lang2:"+str(subEntry)+"\turmode:"+str(urmode))
-                    subEntry=swapDualDelimiters(subEntry)
                     headingList=[urmode]
                     formatCase(subEntry,urequalN,urmode)
                 case _:
                     #print(f"case{urequalN}:{subEntry}+\turmode:+{urmode}")
-                    subEntry=swapDualDelimiters(subEntry)
                     headingList.append(urmode)
                     formatCase(subEntry,urequalN,"")
 
@@ -770,11 +704,10 @@ def loopThruPage(page):
     #print("lol")
     #print(subEntry)
     #print("@end@")
-    folderName=(title.text+"_")[:2]
 def importLangData():
     global langCode,langCanon,langCategory,langType,langFamilycode,langFamily,langSortkey,langAutodetect,langExceptional,langScriptCodes,langAltName,langStandardChars
     langCode,langCanon,langCategory,langType,langFamilycode,langFamily,langSortkey,langAutodetect,langExceptional,langScriptCodes,langAltName,langStandardChars=([] for i in range(12))
-    with open("lang.txt",encoding="utf8") as langFile:
+    with open(r"c://p//map//lang.txt",encoding="utf8") as langFile:
         lineI=-1
         for langLine in langFile:
             langLine=langLine.strip().split(";")
@@ -810,9 +743,7 @@ def importLangData():
 ##            language=line
 ##        else:
 ##            print("Error[2=]:"+line)
-#def
 
-## Import Language data ##
 nPage=[]
 nPointer=""
 importLangData()
@@ -823,18 +754,16 @@ if mode=="search":
 show=(str(input("Show percent complete Y/N:\t").upper())+"N")[0]
 x=0
 webpage=[];
-with open(r"xml//text.txt",encoding='utf8') as file:
+with open(r"C://p//map//xml//text.txt",encoding='utf8') as file:
     for line in file:
         x+=1
         if "<page>" in line:
             webpage = []
             webpage.append(line)
         elif "</page>" in line:
-            #print(webpage)
             #webpage is now finished to analyse
             webpage.append(line)
             webpage='\n'.join(webpage)
-            #print(webpage)
             tree = ET.fromstring(webpage)
             title=returnTag(tree,"title")
             if mode=="search":
@@ -842,23 +771,17 @@ with open(r"xml//text.txt",encoding='utf8') as file:
                 if title.text.upper()==term.upper():
                     revision=returnTag(tree,"revision")
                     page=returnTag(revision,"text").text #different variable name since text is too vague + converted to string so it is easier
-                    #print(page)
             else:
                 ns=returnTag(tree,"ns")
                 revision=returnTag(tree,"revision")
-                #print(title.text+"\t"+ns.text)
                 if (ns.text)=='0': #if not a special nor talk page
                     print("Title:\t\t"+title.text)
-                    #for child in revision:
-                     #   print(child.tag, child.attrib)
+                    ##Decided not to use 
                     #username=returnTag(contributor,"username") #doesn't work all the time since sometimes edits are made by IPs and have an IP xml tag instead of ID+username  \nprint(username.text)
                     page=returnTag(revision,"text").text #different variable name since text is too vague + converted to string so it is easier
                     initnPage()
-                    #print(f"nPage2={nPage}")
-
                     loopThruPage(page)
-                    #print(f"nPage{nPage}")
-                    with open('xml//translate.txt', 'a', encoding="utf-8") as f:
+                    with open(r'c://p//Map//xml//translate.txt', 'a', encoding="utf-8") as f:
                         for fileLine in nPage:
                             f.write(f"{fileLine}\n")
         else:
@@ -866,4 +789,3 @@ with open(r"xml//text.txt",encoding='utf8') as file:
         if x%100000==0:
             if show=="Y":
                 print(str(x)+"\t"+str(round((x/100000)/219*100))+str("%"))#21871733    329477303
-        #print(line.rstrip())
