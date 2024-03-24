@@ -674,36 +674,23 @@ def loopThruPage(page):
                 else:
                     print("Error["+str(a)+"=]:"+line)
         if equalN>0:
-            #print("urmode="+str(urmode)+"\t("+str(urequalN)+")")
             match urequalN:
                 case 0:
-                    #print("\t\t\t\t\n\n\n\nHelloworld\n\n\n\n")
-                    #print(f"case{urequalN}:{subEntry}\turmode:{urmode}")
                     formatCase(subEntry,urequalN,"")
                 case 1:
                     print("error")
                 case 2:
-                    #print("lang2:"+str(subEntry)+"\turmode:"+str(urmode))
-                    lang=getLangCode(urmode)
-                    #print(lang)
-                    #if len(str(subEntry))>2:
-                     #   print("lang2:"+str(subEntry)+"\turmode:"+str(urmode))
+                    #lang=getLangCode(urmode)
                     headingList=[urmode]
                     formatCase(subEntry,urequalN,urmode)
                 case _:
-                    #print(f"case{urequalN}:{subEntry}+\turmode:+{urmode}")
                     headingList.append(urmode)
                     formatCase(subEntry,urequalN,"")
-
-            
-            subEntry=[]#do not comment/delete out
+            subEntry=[]
 
         else:
             subEntry.append(line)
-    #necessary to print
-    #print("lol")
-    #print(subEntry)
-    #print("@end@")
+    
 def importLangData():
     global langCode,langCanon,langCategory,langType,langFamilycode,langFamily,langSortkey,langAutodetect,langExceptional,langScriptCodes,langAltName,langStandardChars
     langCode,langCanon,langCategory,langType,langFamilycode,langFamily,langSortkey,langAutodetect,langExceptional,langScriptCodes,langAltName,langStandardChars=([] for i in range(12))
@@ -718,7 +705,6 @@ def importLangData():
                     if lineJ>=0:
                         lL.append(langElement)
                     lineJ+=1
-                #print(lL)
                 if len(lL)==12:
                     langCode.append(lL[0])
                     langCanon.append(lL[1])
@@ -733,16 +719,6 @@ def importLangData():
                     langAltName.append(lL[10])#also known as 'other names'
                     langStandardChars.append(lL[11])
             lineI+=1
-
-#def parse#
-##def returnHeader(line,n):
-##    if line[:2]=="==" and line[2]!="=":
-##        if line.count("=")==4:
-##            line=line.replace("=","")
-##            print(line)
-##            language=line
-##        else:
-##            print("Error[2=]:"+line)
 
 nPage=[]
 nPointer=""
