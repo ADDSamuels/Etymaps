@@ -642,7 +642,7 @@ def formatCase(subEntry,caseN,header):
                             enclosersJ.pop()
                             cutLines2.append(mem)
                         except:
-                            print(f"i=({i}),i2=({i2}) ,j=({j}) \n line={line}\n cutLines={cutLines}\n enclosers={enclosers}\n enclosersI={enclosersI}\n enclosersJ={enclosersJ}") 
+                            pass#print(f"i=({i}),i2=({i2}) ,j=({j}) \n line={line}\n cutLines={cutLines}\n enclosers={enclosers}\n enclosersI={enclosersI}\n enclosersJ={enclosersJ}") 
                 oldChar=char
                 j+=1
         i+=1
@@ -727,10 +727,7 @@ nPage=[]
 nPointer=""
 importLangData()
 succeeded=False
-mode=input("Type search:\t")
-if mode=="search":
-    term=input("Type input:\t")
-show=(str(input("Show percent complete Y/N:\t").upper())+"N")[0]
+print("Welcome to Etym Translation Program\nCopyright ©2024 Alexander Samuels")
 x=0
 webpage=[];
 with open(r"C://p//map//xml//text.txt",encoding='utf8') as file:
@@ -745,26 +742,20 @@ with open(r"C://p//map//xml//text.txt",encoding='utf8') as file:
             webpage='\n'.join(webpage)
             tree = ET.fromstring(webpage)
             title=returnTag(tree,"title")
-            if mode=="search":
-                title=returnTag(tree,"title")
-                if title.text.upper()==term.upper():
-                    revision=returnTag(tree,"revision")
-                    page=returnTag(revision,"text").text #different variable name since text is too vague + converted to string so it is easier
-            else:
-                ns=returnTag(tree,"ns")
-                revision=returnTag(tree,"revision")
-                if (ns.text)=='0': #if not a special nor talk page
-                    #print("Title:\t\t"+title.text)
-                    ##Decided not to use 
-                    #username=returnTag(contributor,"username") #doesn't work all the time since sometimes edits are made by IPs and have an IP xml tag instead of ID+username  \nprint(username.text)
-                    page=returnTag(revision,"text").text #different variable name since text is too vague + converted to string so it is easier
-                    initnPage()
-                    loopThruPage(page)
-                    with open(r'c://p//Map//xml//translate.txt', 'a', encoding="utf-8") as f:
-                        for fileLine in nPage:
-                            f.write(f"{fileLine}\n")
+            ns=returnTag(tree,"ns")
+            revision=returnTag(tree,"revision")
+            if (ns.text)=='0': #if not a special nor talk page
+                #print("Title:\t\t"+title.text)
+                ##Decided not to use 
+                #username=returnTag(contributor,"username") #doesn't work all the time since sometimes edits are made by IPs and have an IP xml tag instead of ID+username  \nprint(username.text)
+                page=returnTag(revision,"text").text #different variable name since text is too vague + converted to string so it is easier
+                initnPage()
+                loopThruPage(page)
+                with open(r'c://p//Map//xml//translate.txt', 'a', encoding="utf-8") as f:
+                    for fileLine in nPage:
+                        f.write(f"{fileLine}\n")
         else:
             webpage.append(line)
-        if x%100000==0:
-            if show=="Y":
-                print(str(x)+"\t"+str(round((x/100000)/219*100))+str("%"))#21871733    329477303
+        if x%200000==0:
+            print(str(x)+"\t"+str(round((100*x)/479268517,2))+str("%"))#479268517
+            print("Title:\t\t"+title.text)
