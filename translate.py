@@ -352,7 +352,8 @@ def ofForm(tag,a,b):
     elif tag=="word-final anusvara form of":
         atp("wfa",a,b)
     elif tag.find("form of")>0:
-        addToPage2("x",a,b)
+        a=currentLangCode+"|"+a.replace("{{","").replace("}}","")
+        addToPage("x",a)
 def has_cryillic(text):
     return bool(re.search('[\u0400-\u04FF]', text))    
 def remove_diacritics(text):
@@ -441,13 +442,15 @@ def inputData(cutLines,caseN,header):
     i=0
     global nPage
     global nPointer
+    global currentLangCode
+    currentLangCode=""
     if len(headingList)>0:
         currentLang=headingList[0]
         currentLangCode=getLangCode(currentLang)
         #print(currentLang+currentLangCode)
     nPointMem=0
     nPointMem2=0
-    currentLangCode=""
+    
     transList=[]
     #print(headingList)
     if caseN==3:
@@ -558,7 +561,7 @@ def inputData(cutLines,caseN,header):
                             raise Exception("Error len(transList)>1")
                         line=line.replace("}}","").split("|")
                         if len(line)>=2:
-                            nPointMem=1
+                            nPointMem2=1
                             transMem=line[0]+"|"+line[1]
                             subtag1="<tr><trti>"+line[1]+r"</trti>"
                             subtag2="</tr>"
@@ -751,7 +754,7 @@ with open(r"C://p//map//xml//text.txt",encoding='utf8') as file:
                 ns=returnTag(tree,"ns")
                 revision=returnTag(tree,"revision")
                 if (ns.text)=='0': #if not a special nor talk page
-                    print("Title:\t\t"+title.text)
+                    #print("Title:\t\t"+title.text)
                     ##Decided not to use 
                     #username=returnTag(contributor,"username") #doesn't work all the time since sometimes edits are made by IPs and have an IP xml tag instead of ID+username  \nprint(username.text)
                     page=returnTag(revision,"text").text #different variable name since text is too vague + converted to string so it is easier
