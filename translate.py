@@ -500,6 +500,7 @@ def inputData(cutLines,caseN,header):
                 else:#nouns etc
                     if tag=="form of":
                         pass#get tag
+                        atp("j",line,lT)
                     elif tag=="lb":
                         pass#dp stuff
                     else:
@@ -727,7 +728,7 @@ nPage=[]
 nPointer=""
 importLangData()
 succeeded=False
-print("Welcome to Etym Translation Program\nCopyright ©2024 Alexander Samuels")
+print("Welcome to Etymaps Translation Program\nCopyright ©2024 Alexander Samuels")
 x=0
 webpage=[];
 with open(r"C://p//map//xml//text.txt",encoding='utf8') as file:
@@ -751,9 +752,12 @@ with open(r"C://p//map//xml//text.txt",encoding='utf8') as file:
                 page=returnTag(revision,"text").text #different variable name since text is too vague + converted to string so it is easier
                 initnPage()
                 loopThruPage(page)
-                with open(r'c://p//Map//xml//translate.txt', 'a', encoding="utf-8") as f:
-                    for fileLine in nPage:
-                        f.write(f"{fileLine}\n")
+                if len(nPage)>3:
+                    with open(r'c://p//Map//xml//translate.txt', 'a', encoding="utf-8") as f:
+                        for fileLine in nPage:
+                            f.write(f"{fileLine}\n")
+                else:
+                    print(nPage)
         else:
             webpage.append(line)
         if x%200000==0:
