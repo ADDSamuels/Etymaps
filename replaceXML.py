@@ -21,5 +21,3 @@ with open(r"xml//wikidata.xml", encoding='utf8') as file:
                 page.append(line)
             if lineCount % 1000000 == 0: #periodically print a message (every 1000000 lines ), for the user to see the progress of convertings
                 print(str(lineCount) + "\t" + str(round( (lineCount / 100000) / 329400)) + str("%"))
-            
-        #print(line.rstrip())

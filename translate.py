@@ -42,31 +42,34 @@ def removeTag(tag, line):
         line = line.split("|", 1)[1]
     lineMinusTag = line.replace("{{", "").replace("}}", "")
     addToPage(tag, lineMinusTag)
-#splits line variable based on the  
-def lineCut(line, char, lineSide):
-    if line[0].find(char) != -1:
+#splits line variable based on the lineSide (1=Left of delimiter,2=right side of delimiter) and the delimiter
+def lineCut(line, delimiter, lineSide):
+    #checks if delimiter is found, if yes, cuts the line
+    if line[0].find(delimiter) != -1:
         if lineSide == 1:
-            lineMem = line[0][:line[0].find(char)]
+            lineMem = line[0][:line[0].find(delimiter)]
         else:
-            lineMem = line[0][line[0].find(char)+2:]
+            lineMem = line[0][line[0].find(delimiter)+2:]
         if len(lineMem) > 0: 
             if lineSide == 1:#eg, {{,[[
-                line.insert(1, (line[0])[line[0].find(char):])
-                line[0]=(line[0])[:line[0].find(char)]
+                line.insert(1, (line[0])[line[0].find(delimiter):])
+                line[0]=(line[0])[:line[0].find(delimiter)]
             elif lineSide == 2:#eg, }} , ]]
-                line.insert(1, (line[0])[line[0].find(char) + 2:])
-                line[0]=(line[0])[:line[0].find(char) + 2]
+                line.insert(1, (line[0])[line[0].find(delimiter) + 2:])
+                line[0]=(line[0])[:line[0].find(delimiter) + 2]
         return line.copy()
     else:
         return line.copy()
+#returns tags; e.g {{tag|content1|content2}} would return tag and true 
 def getTag(line):
     if line.find("|") >= 0:
         return line[2:].split("|", 1)[0],True
     return line[:2].replace("}}","").replace("]]",""),False
+#added of-forms in one function to make other functions more readable.
 def ofForm(tag, line):
     if tag == "adj form of": #pos improve template, with more adjectives
         removeTag("ofa", line)
-    elif tag == "inflection of" or tag == "infl of":
+    if tag == "inflection of" or tag == "infl of":
         removeTag("ofi", line)
     elif tag == "noun form of":
         removeTag("ofn", line)
@@ -340,112 +343,217 @@ def ofForm(tag, line):
         removeTag("ofv", line)
     elif tag == "word-final anusvara form of":
         removeTag("ofwfa", line)
-    elif tag.find("form of") > 0:
+    elif tag.find("form of") > 0:#for alternative form of derivations, I keep them
         line = currentLangCode + "|" + line.replace("{{","").replace("}}", "")
         addToPage("x", line)#form is very common so reduces space with just a <x> tag
 
-#Check if text has cryillic characters
-def hasCryillic(text):
-    return bool(re.search('[\u0400-\u04FF]', text)) 
-
-#removes certain diacritics
-def removeDiacritics(text):
+#removes certain diacritics only if the language is Slovincian
+def removeDiacriticsFromSlovincian(text):
     return ''.join(char for char in unicodedata.normalize('NFD', text) if unicodedata.category(char) != 'Mn')
-def makeEntryName(text):
-    text = re.sub(r'[aeɛioɵuʉt̪s̪]+[\u0300-\u036F]*', lambda match: removeDiacritics(match.group()), text)
+#removes certain
+def makeEntryNameFromSlovincian(text):
+    text = re.sub(r'[aeɛioɵuʉt̪s̪]+[\u0300-\u036F]*', lambda match: removeDiacriticsFromSlovincian(match.group()), text)
     return text
-
-def etymTag(tag, line, hasBar):
+#adds etymological tags in one function to make other functions more readable.
+def etymTag(tag, line):
+    if tag == "inh" or tag == "inherited" or tag == "inh" or tag == "inh-lite":#included template inh+, inh-lite
+        removeTag("in", line)
+    elif tag == "borrowed" or tag == "bor" or tag == "bor+":#included template bor+
+        removeTag("bo", line)
+    elif tag == "derived" or tag == "der" or tag == "der+" or tag == "der-lite":#included template der+, der-lite
+        removeTag("de", line)
+    elif tag == "undefined derivation" or tag == "uder" or tag == "der?":
+        removeTag("d?", line)
+    elif tag == "calque" or tag == "cal" or tag == "clq":
+        removeTag("ca", line)
+    elif tag == "semantic loan" or tag == "sl":
+        removeTag("sl", line)
+    elif tag == "partial calque" or tag == "pcal" or tag == "pclq":
+        removeTag("pc", line)
+    elif tag == "descendant" or tag == "desc":
+        removeTag("ds", line)
+    elif tag == "descendant tree" or tag == "desctree":
+        removeTag("dt", line)
+    elif tag == "cognate" or tag == "cog":
+        removeTag("cg", line)
+    elif tag == "noncognate" or tag == "noncog" or tag == "ncog" or tag == "nc":
+        removeTag("ncg", line)
+    elif tag == "learned borrowing" or tag == "lbor":
+        removeTag("lbo", line)
+    elif tag == "orthographic borrowing" or tag == "obor":
+        removeTag("obo", line)
+    elif tag == "semi-learned borrowing" or tag == "slbor":
+        removeTag("slb", line)
+    elif tag == "unadapted borrowing" or tag == "ubor":
+        removeTag("ubo", line)
+    elif tag == "mention" or tag == "m" or tag == "langname-mention" or tag == "m+":# included template m+
+        removeTag("m", line)
+    elif tag == "affix" or tag == "af":
+        removeTag("af", line)
+    elif tag == "prefix" or tag == "pre":
+        removeTag("pf", line)
+    elif tag == "confix" or tag == "con":
+        removeTag("cf", line)
+    elif tag == "suffix" or tag == "suf":
+        removeTag("sf", line)
+    elif tag == "compound" or tag == "cp":
+        removeTag("cp", line)
+    elif tag == "blend":
+        removeTag("be", line)
+    elif tag == "clipping":
+        removeTag("cl", line)
+    elif tag == "short for":
+        removeTag("sh4", line)
+    elif tag == "back-form" or tag == "bf" or tag == "back-formation":
+        removeTag("bf", line)
+    elif tag == "doublet" or tag == "dbt":
+        removeTag("2l", line)
+    elif tag == "onomatopoeic" or tag == "onom":
+        removeTag("on", line)
+    elif tag == "unk" or tag == "unknown":
+        removeTag("unk", line)
+    elif tag == "unc" or tag == "uncertain":
+        removeTag("unc", line)
+    elif tag == "rfe":
+        removeTag("rfe", line)
+    elif tag == "etystub":
+        removeTag("ets", line)
+    elif tag == "apocopic form":
+        removeTag("apo", line)
+    elif tag == "aphetic form":
+        removeTag("aph", line)
+    elif tag == "causative":
+        removeTag("cau", line)
+    elif tag == "acronym":
+        removeTag("acr", line)
+#cleans the text of characters which are not supported by the tag
+def cleanTextForTags(line, currentLangCode):
+    line = re.sub(u'[\u064e\u064f\u0650\u0651\u0652\u064c\u064b\u064d\u0640\ufc62]', '', line)
+        #if language = Mariupol Greek, remove certain characters
+    if currentLangCode == "grk-mar":
+        if re.search('[\u0400-\u04FF]', line):
+            re.sub(u'[\u0301]', '', line)
+    # if language = Slovincian (a West-Slavic language near Słupsk, Pomerania, Poland)
+    elif currentLangCode=="zlw-slv":
+        line = makeEntryNameFromSlovincian(line)
+    else:
+        #delete certain charachters
+        replacements = [chr(0x303), chr(0x304), chr(0x307), chr(0x308), chr(0x323), chr(0x32E), chr(0x330), chr(0x331), chr(0x711), "[" + chr(0x730) + "-" + chr(0x74A) + "]"]
+        for replacement in replacements:
+            line = re.sub(replacement, "", line)
+    return line
+def processAlsoTemplate(line, hasBar):
     if hasBar:
-        if tag == "inh" or tag == "inherited" or tag == "inh" or tag == "inh-lite":#included template inh+, inh-lite
-            removeTag("in", line)
-        elif tag == "borrowed" or tag == "bor" or tag == "bor+":#included template bor+
-            removeTag("bo", line)
-        elif tag == "derived" or tag == "der" or tag == "der+" or tag == "der-lite":#included template der+, der-lite
-            removeTag("de", line)
-        elif tag == "undefined derivation" or tag == "uder" or tag == "der?":
-            removeTag("d?", line)
-        elif tag == "calque" or tag == "cal" or tag == "clq":
-            removeTag("ca", line)
-        elif tag == "semantic loan" or tag == "sl":
-            removeTag("sl", line)
-        elif tag == "partial calque" or tag == "pcal" or tag == "pclq":
-            removeTag("pc", line)
-        elif tag == "descendant" or tag == "desc":
-            removeTag("ds", line)
-        elif tag == "descendat tree" or tag == "desctree":
-            removeTag("dt", line)
-        elif tag == "cognate" or tag == "cog":
-            removeTag("cg", line)
-        elif tag == "noncognate" or tag == "noncog" or tag == "ncog" or tag == "nc":
-            removeTag("ncg", line)
-        elif tag == "learned borrowing" or tag == "lbor":
-            removeTag("lbo", line)
-        elif tag == "orthographic borrowing" or tag == "obor":
-            removeTag("obo", line)
-        elif tag == "semi-learned borrowing" or tag == "slbor":
-            removeTag("slb", line)
-        elif tag == "unadapted borrowing" or tag == "ubor":
-            removeTag("ubo", line)
-        elif tag == "mention" or tag == "m" or tag == "langname-mention" or tag == "m+":# included template m+
-            removeTag("m", line)
-        elif tag == "affix" or tag == "af":
-            removeTag("af", line)
-        elif tag == "prefix" or tag == "pre":
-            removeTag("pf", line)
-        elif tag == "confix" or tag == "con":
-            removeTag("cf", line)
-        elif tag == "suffix" or tag == "suf":
-            removeTag("sf", line)
-        elif tag == "compound" or tag == "cp":
-            removeTag("cp", line)
-        elif tag == "blend":
-            removeTag("be", line)
-        elif tag == "clipping":
-            removeTag("cl", line)
-        elif tag == "short for":
-            removeTag("sh4", line)
-        elif tag == "back-form" or tag == "bf" or tag == "back-formation":
-            removeTag("bf", line)
-        elif tag == "doublet" or tag == "dbt":
-            removeTag("2l", line)
-        elif tag == "onomatopoeic" or tag == "onom":
-            removeTag("on", line)
-        elif tag == "unk" or tag == "unknown":
-            removeTag("unk", line)
-        elif tag == "unc" or tag == "uncertain":
-            removeTag("unc", line)
-        elif tag == "rfe":
-            removeTag("rfe", line)
-        elif tag == "etystub":
-            removeTag("ets", line)
-        elif tag == "apocopic form":
-            removeTag("apo", line)
-        elif tag == "aphetic form":
-            removeTag("aph", line)
-        elif tag == "causative":
-            removeTag("cau", line)
-        
-
-
-
-            ## add tag==acronomyn
-def inputData(cutLines,caseN):
-    i=0
+        line = re.sub(r'\|uni=.+?\|', '|', line)
+        line = re.sub(r'\|uniN=.+?\|', '|', line)
+        line = re.sub(r'\|sc=.+?\|', '|', line)
+        line = re.sub(r'\|scN=.+?\|', '|', line)
+        line = re.sub(r'\|uni=.+?\}', '}', line)
+        line = re.sub(r'\|uniN=.+?\}', '}', line)
+        line = re.sub(r'\|sc=.+?\}', '}', line)
+        line = re.sub(r'\|scN=.+?\}', '}', line)
+        addToPage("a", line.replace("}}","").replace("{{","")[5:])
+#remove some unnecessary cosmetic data
+def regrexLine(line):
+    line = re.sub(r'\|sort=.+?\|', '|', line)
+    line = re.sub(r'\|title=.+?\|', '|', line)
+    line = re.sub(r'\|sc=.+?\|', '|', line)
+    line = re.sub(r'\|collapse=.+?\|', '|', line)
+    line = re.sub(r'\|sort=.+?\}', '}', line)
+    line = re.sub(r'\|title=.+?\}', '}', line)
+    line = re.sub(r'\|sc=.+?\}', '}', line)
+    line = re.sub(r'\|collapse=.+?\}', '}', line)
+    return line
+def processDefinitionTemplates(line, tag, hasBar):
+    if hasBar:
+        #if etymology then use the function
+        if "Etymology" == (headingList[-1])[:9]:
+            etymTag(tag, line)
+        elif "Alternative forms" == headingList[-1]:
+            if tag == "l" or tag == "l-self" or tag == "link" or tag == "ll":
+                removeTag("al", line)
+        else:#nouns etc
+            if tag == "form of":
+                removeTag("ofj", line)
+            elif tag == "lb":
+                pass
+            else:
+                line=line#only get |1= and |2= for line, ignore rest
+                ofForm(tag, line)
+def processDerivedTerms(line, tag):
+    if tag[:3] == "col" or tag[:3] == "der":
+        cutLines = line.split('|')
+        cutLineLang = cutLines[1].replace("{{", "").replace("}}", "")
+        cutLineI = 0
+        for cutLine in cutLines:
+            if cutLineI == 1:
+                cutLine = re.sub(r'[{{].+[}}].', '', cutLine).replace(r"/", "")
+                cutLine = re.sub(r'\].+\[', '|', cutLine)
+                cutLine = cutLine.replace("[", "").replace("]", "").replace("{{", "").replace("}}", "")
+                cutLine = [cutLine.split("|")]
+                cutLineJ = 0
+                for cutLine2 in cutLine:
+                    if len(cutLine2[cutLineJ]) > 0:
+                        clmem = "{{d|" + cutLineLang + "|"+ cutLine2[cutLineJ] + "}}"
+                        removeTag("d", clmem)
+                    cutLineJ += 1
+            cutLineI=1
+    elif tag == "l":
+        removeTag("d", line)
+def processDescendantTerms(line, tag):
+    if tag == "desc" or tag == "descendant":
+        line = re.sub(r'\|bor=.+?\|', '|', line)
+        line = line.split("|")
+        if len(line) >= 3:
+            clmem = line[0] + "|" + line[1] + "|" + line[2] + "}}"
+            removeTag("v", clmem)
+def processTranslations(line, tag, transPointerMem):
+    #a normal translation
+    global newPointer
+    global newPage
+    transMem = ""
+    if tag == "t" or tag == "t+" or tag == "tt" or tag == "tt+":
+        line = re.sub(r'\|alt=.+?\|', '|', line)
+        line = re.sub(r'\|lit=.+?\|', '|', line)
+        line = re.sub(r'\|id=.+?\|', '|', line)
+        #note that here I delete certain data for translation but keep transliterations (tr=), 
+        #since I will be using them
+        line = line.split("|")
+        if len(line) == 3:
+            transMem = "{{t|" + line[1] + "|" + line[2]
+        elif len(line) >= 4:
+            transMem = "{{t|" + line[1] + "|" + line[2] + "|" + line[3]#removes extra data which could be hiding in the folder
+        removeTag("t", transMem)
+    #at the very beginning of a translation    
+    elif tag == "trans-top":
+        line = re.sub(r'\|id=.+?\|', '|', line)
+        line = re.sub(r'\|column-width=.+?\|', '|', line)
+        line = line.replace("}}", "").split("|")
+        if len(line) >= 2:
+            transPointerMem = 1
+            subtag1 = "<tr><trti>" + line[1] + r"</trti>"
+            subtag2 = "</tr>"
+            newPage.insert(newPointer, subtag1)
+            newPointer += 1
+            newPage.insert(newPointer, subtag2)
+    #end of a translation
+    elif tag == "trans-bottom":
+        newPointer += transPointerMem
+        transPointerMem = 0
+    return transPointerMem
+def inputData(cutLines, headerN):
     global newPage
     global newPointer
     global currentLangCode
     currentLangCode = ""
-    #Set
+    #Set language and language codes so they can be later referred
     if len(headingList) > 0:
         currentLang = headingList[0]
         currentLangCode = getLangCode(currentLang)
-        #print(currentLang + currentLangCode)
     newPointerMem = 0
-    newPointerMem2 = 0
-    
+    transPointerMem = 0
     #If there are multiple etymologies add tags around them
-    if caseN==3:
+    if headerN == 3:
         if (headingList[-1])[:9] == "Etymology":
             if len(headingList[-1]) > 9:
                 newPointerMem = 1
@@ -454,146 +562,55 @@ def inputData(cutLines,caseN):
                 newPage.insert(newPointer, subtag1)
                 newPointer += 1
                 newPage.insert(newPointer, subtag2)
-    
     for line in cutLines:
-        line=re.sub(u'[\u064e\u064f\u0650\u0651\u0652\u064c\u064b\u064d\u0640\ufc62]', '', line)
-        if currentLangCode=="grk-mar":
-            if hasCryillic(line):
-                re.sub(u'[\u0301]', '', line)
-        elif currentLangCode=="zlw=slv":
-            line=makeEntryName(line)
-        else:
-            replacements = [chr(0x303), chr(0x304), chr(0x307), chr(0x308), chr(0x323), chr(0x32E), chr(0x330), chr(0x331), chr(0x711), "[" + chr(0x730) + "-" + chr(0x74A) + "]"]
-            for replacement in replacements:
-                line = re.sub(replacement, "", line)
-        tag=""
+        line = cleanTextForTags(line, currentLangCode)
         if line.find("{{") == -1 and line.find("[[") == -1:
-            if caseN!=0:
-                if caseN == 3 and "Etymology" == headingList[-1]:
+            if headerN!=0:
+                if headerN == 3 and "Etymology" == headingList[-1]:
                     pass
                 else:
                     pass#print(headingList[-1])
         elif line[:2] == "{{":
             tag, hasBar = getTag(line)
-            if tag == "also" and hasBar:
-                if line.find("|sc=") >= 0 or line.find("|uni=") >= 0 or line.find("|uniN=") >= 0 or line.find("|scN=") >= 0:
-                    print(f"@also={line}")
-                else:
-                    addToPage("a", line.replace("}}","").replace("{{","")[5:])#need to add parser for appendix
-            elif caseN==3:
-
-                if "Etymology" == (headingList[-1])[:9]:
-                    etymTag(tag,line,hasBar)
-                elif "Alternative forms" == headingList[-1]:
-                    if tag == "l" or tag == "l-self" or tag == "link" or tag == "ll":
-                        removeTag("al", line)
-                else:#nouns etc
-                    if tag == "form of":
-                        pass#get tag
-                        removeTag("ofj", line)
-                    elif tag == "lb":
-                        pass#dp stuff
-                    else:
-                        line=line#only get |1= and |2= for line, ignore rest
-                        ofForm(tag, line)
-                        
-                #pass#Etymology
-            elif caseN==4:
-                line=re.sub(r'\|sort=.+?\|', '|', line)
-                line=re.sub(r'\|title=.+?\|', '|', line)
-                line=re.sub(r'\|sc=.+?\|', '|', line)
-                line=re.sub(r'\|collapse=.+?\|', '|', line)
+            if tag == "also":
+                processAlsoTemplate(line, hasBar)
+            elif headerN == 3:
+                processDefinitionTemplates(line, tag, hasBar)
+            elif headerN == 4: 
+                line = regrexLine(line)
                 if "Derived terms" == headingList[-1]:
-                    if tag[:3] == "col" or tag[:3] == "der":
-                        cutLines = line.split('|')
-                        clLang = cutLines[1].replace("{{", "").replace("}}", "")
-                        clI = 0
-                        for cutLine in cutLines:
-                            if clI == 1:
-                                cutLine = re.sub(r'[{{].+[}}].', '', cutLine).replace(r"/", "")
-                                cutLine = re.sub(r'\].+\[', '|', cutLine)
-                                cutLine = cutLine.replace("[", "").replace("]", "").replace("{{", "").replace("}}", "")
-                                cutLine = [cutLine.split("|")]
-                                clJ = 0
-                                for cutLine2 in cutLine:
-                                    if len(cutLine2[clJ])>0:
-                                        clmem = "{{d|" + clLang + "|"+ cutLine2[clJ] + "}}"
-                                        removeTag("d", clmem)
-                                    clJ += 1
-                            clI=1
-                    elif tag == "l":
-                        removeTag("d", line)
-                #elif ":
+                    processDerivedTerms(line, tag)
                 elif "Descendants" == headingList[-1]:
-                    if tag == "desc" or tag == "descendant":
-                        line = re.sub(r'\|bor=.+?\|', '|', line)
-                        line = line.split("|")
-                        if len(line) >= 3:
-                            clmem = line[0] + "|" + line[1] + "|" + line[2] + "}}"
-                            removeTag("v", clmem)
+                    processDescendantTerms(line, tag)
                 elif "Translations" == headingList[-1]:
-                    if tag == "t" or tag == "t+" or tag == "tt" or tag == "tt+":
-                        line = re.sub(r'\|sc=.+?\|', '|', line)
-                        line = re.sub(r'\|alt=.+?\|', '|', line)
-                        line = re.sub(r'\|lit=.+?\|', '|', line)
-                        line = re.sub(r'\|id=.+?\|', '|', line)
-                        #keeping translations (tr=...)
-                        line = line.split("|")
-                        if len(line) == 3:
-                            transMem = "{{t|" + line[1] + "|" + line[2]
-                        elif len(line) >= 4:
-                            transMem = "{{t|" + line[1] + "|" + line[2] + "|" + line[3]
-                        removeTag("t", transMem)
-                        
-                    elif tag == "trans-top":
-                        line = re.sub(r'\|id=.+?\|', '|', line)
-                        line = re.sub(r'\|column-width=.+?\|', '|', line)
-                        line = line.replace("}}", "").split("|")
-                        if len(line) >= 2:
-                            newPointerMem2 = 1
-                            transMem = line[0] + "|" + line[1]
-                            subtag1 = "<tr><trti>" + line[1] + r"</trti>"
-                            subtag2 = "</tr>"
-                            newPage.insert(newPointer, subtag1)
-                            newPointer += 1
-                            newPage.insert(newPointer, subtag2)
-                    elif tag == "trans-bottom":
-                        newPointer += newPointerMem2
-                        newPointerMem2 = 0
-        elif line[:2] == "[[":
-            tag = getTag(line)
-        else:
-            print(f"ACHTUNG: Data not declined\tline={line}")
-        i += 1
+                    transPointerMem = processTranslations(line, tag, transPointerMem)
     newPointer += newPointerMem
-def formatCase(subEntry, caseN):
+#gets a list and 
+def splitOnTemplates(subEntry):
     cutLines = []
-    newLine = []
-    mem = ""
     for line in subEntry:
         line = replaceQuotes(line)
         newLine = []
         line = [line]## I need to properly format html tags like, for example <math></math>
-        while len(line)>0:
+        while len(line) > 0:
             line = lineCut(lineCut(lineCut(lineCut(line, "{{", 1), "[[", 1), "}}", 2), "]]", 2)
             newLine.append(line[0])
             line.pop(0)
-        i = 0
         cutLines = cutLines.copy() + newLine.copy()
-    enclosers = []
-    enclosersI = []
-    enclosersJ = []
+    return cutLines
+def formatCase(subEntry, headerN):
+    splitLines = splitOnTemplates(subEntry)
+    enclosers, enclosersI, enclosersJ, cutLines = [], [], [], []
     brackets=["{{", "}}", "[[", "]]"]
     i = 0
-    i2 = 0
-    cutLines2 = []
-    for line in cutLines:
+    mem = ""
+    for line in splitLines:
         j = 0
         oldChar = ""
         if not any(bracket in line for bracket in brackets):
             if len(enclosers) == 0:
                 line = line.replace("\t", "").lower()
-                cutLines2.append(line)
+                cutLines.append(line)
             else:
                 mem = mem + line
         else:
@@ -610,123 +627,114 @@ def formatCase(subEntry, caseN):
                             for i2 in range(enclosersI[-1], i+1):
                                 if i2 == enclosersI[-1]:
                                     if i2 == i:
-                                        mem=(cutLines[i2])[enclosersJ[-1]:j + 1]
+                                        mem = (splitLines[i2])[enclosersJ[-1]:j + 1]
                                     else:
-                                        mem=(cutLines[i2])[enclosersJ[-1]:]
+                                        mem = (splitLines[i2])[enclosersJ[-1]:]
                                 elif i2 == i:
-                                    mem=mem + (cutLines[i2])[:j + 1]
+                                    mem = mem + (splitLines[i2])[:j + 1]
                                 else:
-                                    mem=mem + cutLines[i2]
+                                    mem = mem + splitLines[i2]
                             enclosers.pop()
                             enclosersI.pop()
                             enclosersJ.pop()
-                            cutLines2.append(mem)
+                            cutLines.append(mem)
                         except:
-                            pass#print(f"i=({i}),i2=({i2}) ,j=({j}) \n line={line}\n cutLines={cutLines}\n enclosers={enclosers}\n enclosersI={enclosersI}\n enclosersJ={enclosersJ}") 
-                oldChar=char
-                j+=1
-        i+=1
-    inputData(cutLines2,caseN)
+                            pass
+                oldChar = char
+                j += 1
+        i += 1
+    inputData(cutLines, headerN)
 def loopThruPage(page):
     page2 = page.split("\n")
     page2 = list(filter(('').__ne__, page2))
     subEntry = []
-    j = 0
-    urequalN = 0
-    mode=""
-    urmode=""
-    equalN2=0
-    initnewPage()
+    urequalN, equalN2 = 0, 0
+    mode, urmode = "", ""
+    initnewPage() #initialise new page
     global headingList
-    #Page=[]
-    headingList=[]
+    headingList = []
     for line in page2:
         #print(line)
-        line=re.sub(r'<.+>', '', line)
-        equalN=0
-        for a in range(2,7):
-            if line[:a]=="======"[:a] and line[a]!="=":
-                if line.count("=")==a*2:
-                    urequalN=equalN2
-                    equalN=a
-                    equalN2=a
-                    urmode=mode
-                    mode=line.replace("=","")
-                    #print(str(equalN)+"="+mode)
-                    j+=1
-        if equalN>0:
-            match urequalN:
-                case 0:
-                    formatCase(subEntry,urequalN)
-                case 1:
-                    pass#skip case 1 since it's defective
-                case 2:
-                    headingList=[urmode]
-                    formatCase(subEntry,urequalN)
-                case _:
+        line = re.sub(r'<.+>', '', line)
+        equalN = 0
+        for i in range(2,7):
+            if line[:i] == "======"[:i] and line[i] != "=":
+                if line.count("=") == i * 2:
+                    urequalN = equalN2
+                    equalN = i
+                    equalN2 = i
+                    urmode = mode
+                    mode = line.replace("=", "")
+        if equalN > 0:
+            if urequalN != 1:
+                if urequalN == 2:
+                    headingList = [urmode]
+                elif urequalN != 0:
                     headingList.append(urmode)
-                    formatCase(subEntry,urequalN)
-            subEntry=[]
+                formatCase(subEntry, urequalN)
+            subEntry = []
 
         else:
-            subEntry.append(line)   
+            subEntry.append(line)
+#imports language data from 
 def importLangData():
     global langCode,langCanon,langCategory,langType,langFamilycode,langFamily,langSortkey,langAutodetect,langExceptional,langScriptCodes,langAltName,langStandardChars
     langCode,langCanon,langCategory,langType,langFamilycode,langFamily,langSortkey,langAutodetect,langExceptional,langScriptCodes,langAltName,langStandardChars=([] for i in range(12))
-    with open(r"c://p//map//lang.txt",encoding="utf8") as langFile:
-        lineI=-1
+    with open(r"c://p//map//lang.txt", encoding = "utf8") as langFile:
+        lineI = -1
         for langLine in langFile:
-            langLine=langLine.strip().split(";")
-            if lineI>=0:
-                lL=[]
-                lineJ=-1
+            langLine = langLine.strip().split(";")
+            if lineI >= 0:
+                langList = []
+                lineJ = -1
                 for langElement in langLine:
-                    if lineJ>=0:
-                        lL.append(langElement)
-                    lineJ+=1
-                if len(lL)==12:
-                    langCode.append(lL[0])
-                    langCanon.append(lL[1])
-                    langCategory.append(lL[2])
-                    langType.append(lL[3])
-                    langFamilycode.append(lL[4])
-                    langFamily.append(lL[5])
-                    langSortkey.append(lL[6])
-                    langAutodetect.append(lL[7])
-                    langExceptional.append(lL[8])
-                    langScriptCodes.append(lL[9])
-                    langAltName.append(lL[10])#also known as 'other names'
-                    langStandardChars.append(lL[11])
-            lineI+=1
-newPage=[]
-newPointer=""
+                    if lineJ >= 0:
+                        langList.append(langElement)
+                    lineJ += 1
+                if len(langList) == 12:
+                    langCode.append(langList[0])
+                    langCanon.append(langList[1])
+                    langCategory.append(langList[2])
+                    langType.append(langList[3])
+                    langFamilycode.append(langList[4])
+                    langFamily.append(langList[5])
+                    langSortkey.append(langList[6])
+                    langAutodetect.append(langList[7])
+                    langExceptional.append(langList[8])
+                    langScriptCodes.append(langList[9])
+                    langAltName.append(langList[10])#also known as 'other names'
+                    langStandardChars.append(langList[11])
+            lineI += 1
+newPage = []
+newPointer = ""
 importLangData()
 print("Welcome to Etymaps Translation Program\nCopyright ©2024 Alexander Samuels")
-lineI=0
+lineCount = 0
 webpage=[]
-with open(r"C://p//map//xml//text.txt",encoding='utf8') as file:
+with open(r"C://p//map//xml//text.txt", encoding = 'utf8') as file:
     for line in file:
-        lineI+=1
+        lineCount += 1
         if "<page>" in line:
             webpage = []
             webpage.append(line)
         elif "</page>" in line:
             #webpage is now finished to analyse
             webpage.append(line)
-            webpage='\n'.join(webpage)
+            webpage = '\n'.join(webpage)
             tree = ElementTree.fromstring(webpage)
-            title=(tree.find('title')).text
-            revision=tree.find('revision')#returnTag(tree,"revision")
-            if ((tree.find('ns')).text)=='0': #if not a special nor talk page
+            title = (tree.find('title')).text
+            revision = tree.find('revision')#returnTag(tree,"revision")
+            if ((tree.find('ns')).text) == '0': #if not a special nor talk page
                 #decided not to use usernames to credit users
-                page=(revision.find("text")).text#returnTag(revision,"text").text #different variable name since text is too vague + converted to string so it is easier
+                page = (revision.find("text")).text#returnTag(revision,"text").text #different variable name since text is too vague + converted to string so it is easier
                 loopThruPage(page)
-                if len(newPage)>3:
-                    with open(r'c://p//Map//xml//translate.txt', 'a', encoding="utf-8") as f:
+                #if NewPage is filled, added it to the file
+                if len(newPage) > 3: 
+                    with open(r'c://p//Map//xml//translate.txt', 'a', encoding = "utf-8") as file2:
                         for fileLine in newPage:
-                            f.write(f"{fileLine}\n")
+                            file2.write(f"{fileLine}\n")
         else:
             webpage.append(line)
-        if lineI % 200000 == 0:
-            print(str(lineI)+"\t"+str(round((100*lineI)/479268517,2))+str("%"))
-            print("Title:\t\t"+title)
+        if lineCount % 200000 == 0:
+            print(str(lineCount) + "\t" + str(round((100 * lineCount) / 479268517, 2)) + str("%"))
+            print("Title:\t\t" + title)
