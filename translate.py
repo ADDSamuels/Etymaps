@@ -730,7 +730,7 @@ with open(r"xml//text.txt", 'r', encoding = 'utf8') as file:
                 loopThruPage(page)
                 #if NewPage is filled, added it to the file
                 if len(newPage) > 3: 
-                    with open(r'xml//translate.txt', 'w', encoding = "utf-8") as file2:
+                    with open(r'xml//translate.txt', 'a', encoding = "utf-8") as file2:
                         for fileLine in newPage:
                             file2.write(f"{fileLine}\n")
                     entryCount += 1
