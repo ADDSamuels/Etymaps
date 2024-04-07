@@ -680,7 +680,7 @@ def loopThruPage(page):
 def importLangData():
     global langCode,langCanon,langCategory,langType,langFamilycode,langFamily,langSortkey,langAutodetect,langExceptional,langScriptCodes,langAltName,langStandardChars
     langCode,langCanon,langCategory,langType,langFamilycode,langFamily,langSortkey,langAutodetect,langExceptional,langScriptCodes,langAltName,langStandardChars=([] for i in range(12))
-    with open(r"c://p//map//lang.txt", encoding = "utf8") as langFile:
+    with open("lang.txt", 'r', encoding = "utf8") as langFile:
         lineI = -1
         for langLine in langFile:
             langLine = langLine.strip().split(";")
@@ -711,7 +711,8 @@ importLangData()
 print("Welcome to Etymaps Translation Program\nCopyright ©2024 Alexander Samuels")
 lineCount = 0
 webpage=[]
-with open(r"C://p//map//xml//text.txt", encoding = 'utf8') as file:
+entryCount = 0
+with open(r"xml//text.txt", 'r', encoding = 'utf8') as file:
     for line in file:
         lineCount += 1
         if "<page>" in line:
@@ -730,11 +731,12 @@ with open(r"C://p//map//xml//text.txt", encoding = 'utf8') as file:
                 loopThruPage(page)
                 #if NewPage is filled, added it to the file
                 if len(newPage) > 3: 
-                    with open(r'c://p//Map//xml//translate.txt', 'a', encoding = "utf-8") as file2:
+                    with open(r'xml//translate.txt', 'w', encoding = "utf-8") as file2:
                         for fileLine in newPage:
                             file2.write(f"{fileLine}\n")
+                    entryCount += 1
         else:
             webpage.append(line)
         if lineCount % 200000 == 0:
-            print(str(lineCount) + "\t" + str(round((100 * lineCount) / 479268517, 2)) + str("%"))
+            print(str(entryCount) + "\t" + str(round((100 * lineCount) / 479268517, 2)) + str("%"))
             print("Title:\t\t" + title)
