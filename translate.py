@@ -426,6 +426,14 @@ def etymTag(tag, line):
         removeTag("cau", line)
     elif tag == "acronym":
         removeTag("acr", line)
+#since regular expressions are computationally complex, I first check, if said tag is in the line
+def regrexSub(tag, line):
+    tag = "|" + tag + "="
+    if tag in line:
+        line = re.sub(rf"\{tag}.?\|", "|", line)
+        if tag in line:
+            line = re.sub(rf"\{tag}.?\}}", "}", line)
+    return line
 #cleans the text of characters which are not supported by the tag
 def cleanTextForTags(line, currentLangCode):
     line = re.sub(u'[\u064e\u064f\u0650\u0651\u0652\u064c\u064b\u064d\u0640\ufc62]', '', line)
@@ -444,25 +452,17 @@ def cleanTextForTags(line, currentLangCode):
     return line
 def processAlsoTemplate(line, hasBar):
     if hasBar:
-        line = re.sub(r'\|uni=.+?\|', '|', line)
-        line = re.sub(r'\|uniN=.+?\|', '|', line)
-        line = re.sub(r'\|sc=.+?\|', '|', line)
-        line = re.sub(r'\|scN=.+?\|', '|', line)
-        line = re.sub(r'\|uni=.+?\}', '}', line)
-        line = re.sub(r'\|uniN=.+?\}', '}', line)
-        line = re.sub(r'\|sc=.+?\}', '}', line)
-        line = re.sub(r'\|scN=.+?\}', '}', line)
+        line = regrexSub('sc', line)
+        line = regrexSub('scN', line)
+        line = regrexSub('uni', line)
+        line = regrexSub('uniN', line)
         addToPage("a", line.replace("}}","").replace("{{","")[5:])
 #remove some unnecessary cosmetic data
 def regrexLine(line):
-    line = re.sub(r'\|sort=.+?\|', '|', line)
-    line = re.sub(r'\|title=.+?\|', '|', line)
-    line = re.sub(r'\|sc=.+?\|', '|', line)
-    line = re.sub(r'\|collapse=.+?\|', '|', line)
-    line = re.sub(r'\|sort=.+?\}', '}', line)
-    line = re.sub(r'\|title=.+?\}', '}', line)
-    line = re.sub(r'\|sc=.+?\}', '}', line)
-    line = re.sub(r'\|collapse=.+?\}', '}', line)
+    line = regrexSub('title', line)
+    line = regrexSub('sc', line)
+    line = regrexSub('collapse', line)
+    line = regrexSub('sort', line)
     return line
 def processDefinitionTemplates(line, tag, hasBar):
     if hasBar:
@@ -502,7 +502,7 @@ def processDerivedTerms(line, tag):
         removeTag("d", line)
 def processDescendantTerms(line, tag):
     if tag == "desc" or tag == "descendant":
-        line = re.sub(r'\|bor=.+?\|', '|', line)
+        line = regrexSub('bor', line)
         line = line.split("|")
         if len(line) >= 3:
             clmem = line[0] + "|" + line[1] + "|" + line[2] + "}}"
@@ -513,9 +513,9 @@ def processTranslations(line, tag, transPointerMem):
     global newPage
     transMem = ""
     if tag == "t" or tag == "t+" or tag == "tt" or tag == "tt+":
-        line = re.sub(r'\|alt=.+?\|', '|', line)
-        line = re.sub(r'\|lit=.+?\|', '|', line)
-        line = re.sub(r'\|id=.+?\|', '|', line)
+        line = regrexSub('alt', line)
+        line = regrexSub('lit', line)
+        line = regrexSub('id', line)
         #note that here I delete certain data for translation but keep transliterations (tr=), 
         #since I will be using them
         line = line.split("|")
@@ -526,8 +526,8 @@ def processTranslations(line, tag, transPointerMem):
         removeTag("t", transMem)
     #at the very beginning of a translation    
     elif tag == "trans-top":
-        line = re.sub(r'\|id=.+?\|', '|', line)
-        line = re.sub(r'\|column-width=.+?\|', '|', line)
+        line = regrexSub('id', line)
+        line = regrexSub('column-width', line)
         line = line.replace("}}", "").split("|")
         if len(line) >= 2:
             transPointerMem = 1
@@ -654,7 +654,6 @@ def loopThruPage(page):
     global headingList
     headingList = []
     for line in page2:
-        #print(line)
         line = re.sub(r'<.+>', '', line)
         equalN = 0
         for i in range(2,7):
