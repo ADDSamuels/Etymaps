@@ -26,9 +26,9 @@ def getLangCode(inputLang):
 def initnewPage():
     global newPage
     global newPointer
-    titletag="<ti>"+title+"</ti>"
-    newPage=["<pa>",titletag,"</pa>"]
-    newPointer=2
+    titletag = "<ti>" + title + "</ti>"
+    newPage = ["<pa>", titletag, "</pa>"]
+    newPointer = 2
 #such quotes are used in highlighting but I removed them   
 def replaceQuotes(line):
     line = line.replace("'''", "")
@@ -578,7 +578,7 @@ def processDescendantTerms(line, tag):
         if len(line) >= 3:
             clmem = line[0] + "|" + line[1] + "|" + line[2] + "}}"
             removeTag("v", clmem)
-def processTranslations(line, tag):
+def processTranslations(line, tag, transPointerMem):
     #a normal translation
     global newPointer
     global newPage
@@ -601,20 +601,20 @@ def processTranslations(line, tag):
         line = regrexSub('column-width', line)
         line = line.replace("}}", "").split("|")
         if len(line) >= 2:
-            subtag1 = "<tr><trti>" + line[1] + r"</trti>"
-            newPage.insert(newPointer, subtag1)
-            newPointer += 1
+            addTagToPage("<tr><trti>" + line[1] + r"</trti>")
+            transPointerMem = r"</tr>"
     #end of a translation
-    if tag == "trans-bottom":
-        insert = "</tr>"
-        newPage.insert(newPointer, insert)
+    elif tag=="trans-see":
+        addTagToPage("<trsee>")
+        transPointerMem = r"</trsee>"
+    elif tag=="trans-top-also":
+        addTagToPage("<tralso>")
+        transPointerMem = r"</tralso>"
         newPointer += 1
-    if tag=="trans-see":
-        newPage.insert(newPointer, "<transee>")
-        newPointer += 1
-    if tag=="trans-top-also":
-        newPage.insert(newPointer, "<trans-top-also>")
-        newPointer += 1
+    elif tag == "trans-bottom":
+        addTagToPage(transPointerMem)
+        transPointerMem = ""
+    return transPointerMem
 def inputData(cutLines, headerN):
     global newPage
     global newPointer
@@ -624,7 +624,7 @@ def inputData(cutLines, headerN):
     if len(headingList) > 0:
         currentLang = headingList[0]
         currentLangCode, currentLangScript = getLangCodeAndScript(currentLang)
-    newPointerMem = ""
+    newPointerMem, transPointerMem = ""
     #If there are multiple etymologies add tags around them
     if headerN == 3:
         if (headingList[-1])[:9] == "Etymology":
@@ -655,7 +655,7 @@ def inputData(cutLines, headerN):
                 elif "Descendants" == headingList[-1]:
                     processDescendantTerms(line, tag)
                 elif "Translations" == headingList[-1]:
-                    processTranslations(line, tag)
+                    transPointerMem = processTranslations(line, tag, transPointerMem)
                 #add compounds or idioms!
         elif line[:2]=="[[":
             pass#add support for derived terms or idioms
@@ -766,7 +766,6 @@ def loopThruPage(page):
         else:
             subEntry.append(line)
     addTagToPage(r"</L3" + getLangCode(urmode) + ">")
-    #newPointer += 1
     
 #imports language data from 
 def importLangData():
