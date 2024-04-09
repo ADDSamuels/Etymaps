@@ -3,12 +3,21 @@ import xml.etree.ElementTree as ElementTree
 import re
 import unicodedata
 
-#getLangCode returns the language code, used in heading names. For Example English --> en
+#getLangCodeandScript returns the language code and also script, used in heading names. For Example English --> en, Latn
+def getLangCodeAndScript(inputLang):
+    try:
+        canonIndex = langCanon.index(inputLang)
+        if canonIndex > len(langCode): #checks if canonIndex is found in the langCode list
+            return "?", ""
+        else:
+            return langCode[canonIndex], langScriptCodes[canonIndex]
+    except:
+        return "?", ""
 def getLangCode(inputLang):
     try:
         canonIndex = langCanon.index(inputLang)
         if canonIndex > len(langCode): #checks if canonIndex is found in the langCode list
-            return "?" 
+            return "?"
         else:
             return langCode[canonIndex]
     except:
@@ -17,9 +26,9 @@ def getLangCode(inputLang):
 def initnewPage():
     global newPage
     global newPointer
-    titletag = "<ti>" + title + "</ti>"
-    newPage = ["<pa>", titletag, "</pa>"]
-    newPointer = 2
+    titletag="<ti>"+title+"</ti>"
+    newPage=["<pa>",titletag,"</pa>"]
+    newPointer=2
 #such quotes are used in highlighting but I removed them   
 def replaceQuotes(line):
     line = line.replace("'''", "")
@@ -53,19 +62,23 @@ def lineCut(line, delimiter, lineSide):
         if len(lineMem) > 0: 
             if lineSide == 1:#eg, {{,[[
                 line.insert(1, (line[0])[line[0].find(delimiter):])
-                line[0]=(line[0])[:line[0].find(delimiter)]
-            elif lineSide == 2:#eg, }} , ]]
+                line[0] = (line[0])[:line[0].find(delimiter)]
+            else:#eg, }} , ]]
                 line.insert(1, (line[0])[line[0].find(delimiter) + 2:])
-                line[0]=(line[0])[:line[0].find(delimiter) + 2]
+                line[0] = (line[0])[:line[0].find(delimiter) + 2]
         return line.copy()
     else:
         return line.copy()
 #returns tags; e.g {{tag|content1|content2}} would return tag and true 
 def getTag(line):
-    if line.find("|") >= 0:
-        return line[2:].split("|", 1)[0],True
-    return line[:2].replace("}}","").replace("]]",""),False
-#added of-forms in one function to make other functions more readable.
+    try:
+        if line.find("|") >= 0:
+            return line[2:].split("|", 1)[0],True
+        return line[2:].replace("}}","").replace("]]",""),False
+    #added of-forms in one function to make other functions more readable.
+    except:
+        print(f"Line:{line}")
+        print(str(line[2:].replace("}}","").replace("]]",""),False))
 def ofForm(tag, line):
     if tag == "adj form of": #pos improve template, with more adjectives
         removeTag("ofa", line)
@@ -435,20 +448,21 @@ def regrexSub(tag, line):
             line = re.sub(rf"\{tag}.?\}}", "}", line)
     return line
 #cleans the text of characters which are not supported by the tag
-def cleanTextForTags(line, currentLangCode):
-    line = re.sub(u'[\u064e\u064f\u0650\u0651\u0652\u064c\u064b\u064d\u0640\ufc62]', '', line)
-        #if language = Mariupol Greek, remove certain characters
+def cleanTextForTags(line, currentLangCode, currentLangScript):
+    #if language = Mariupol Greek, remove certain characters
     if currentLangCode == "grk-mar":
         if re.search('[\u0400-\u04FF]', line):
             re.sub(u'[\u0301]', '', line)
     # if language = Slovincian (a West-Slavic language near Słupsk, Pomerania, Poland)
-    elif currentLangCode=="zlw-slv":
+    elif currentLangCode == "zlw-slv":
         line = makeEntryNameFromSlovincian(line)
     else:
-        #delete certain charachters
-        replacements = [chr(0x303), chr(0x304), chr(0x307), chr(0x308), chr(0x323), chr(0x32E), chr(0x330), chr(0x331), chr(0x711), "[" + chr(0x730) + "-" + chr(0x74A) + "]"]
-        for replacement in replacements:
-            line = re.sub(replacement, "", line)
+        if "Arab" in currentLangScript:
+            line = re.sub(u'[\u064e\u064f\u0650\u0651\u0652\u064c\u064b\u064d\u0640\ufc62]', '', line)
+        if "Syrc" in currentLangScript:
+            line = removeSyriacDiacritics(line)
+        if "Latn" in currentLangScript:
+            line = removeLatinDiacritics(line)
     return line
 def processAlsoTemplate(line, hasBar):
     if hasBar:
@@ -458,6 +472,59 @@ def processAlsoTemplate(line, hasBar):
         line = regrexSub('uniN', line)
         addToPage("a", line.replace("}}","").replace("{{","")[5:])
 #remove some unnecessary cosmetic data
+#Removes specified combining diacritic characters from the text.
+def removeLatinDiacritics(text):
+    combiningChars = [
+        '\u0303',  # Combining Tilde
+        '\u0304',  # Combining Macron
+        '\u0307',  # Combining Dot Above
+        '\u0308',  # Combining Diaeresis
+        '\u0323',  # Combining Dot Below
+        '\u032E',  # Combining Breve
+        '\u0330',  # Combining Tilde Below
+        '\u0331'   # Combining Macron Below
+    ]
+    # Normalize the text to decomposed Unicode form and remove combining characters
+    normalizedText = unicodedata.normalize('NFD', text)
+    filteredText = ''.join(char for char in normalizedText if char not in combiningChars)
+    # Line back to composed Unicode form
+    return unicodedata.normalize('NFC', filteredText)
+def removeSyriacDiacritics(text):
+    combiningChars = [
+    '\u0711', # syriac letter reversed pe
+    '\u0730', # syriac small high ligature alef with lam with yeh
+    '\u0731', # syriac small high zain
+    '\u0732', # syriac small high seen
+    '\u0733', # syriac small high sheen
+    '\u0734', # syriac small high sad
+    '\u0735', # syriac small high ain
+    '\u0736', # syriac small high qaf
+    '\u0737', # syriac small high noon with kasra
+    '\u0738', # syriac small low noon with kasra
+    '\u0739', # syriac small high word ar-rub
+    '\u073A', # syriac small high sad with lam alef
+    '\u073B', # syriac small high ain with lam alef
+    '\u073C', # syriac small high qaf with lam alef
+    '\u073D', # syriac small high jeem with yeh
+    '\u073E', # syriac small high three dots
+    '\u073F', # syriac small high seen with three dots
+    '\u0740', # syriac small high sheen with three dots
+    '\u0741', # syriac small high tah
+    '\u0742', # syriac small high ain with three dots downwards
+    '\u0743', # syriac small high alef with qamats
+    '\u0744', # syriac small high kaf type 1
+    '\u0745', # syriac small high lam alef
+    '\u0746', # syriac small high meem
+    '\u0747', # syriac small high noon
+    '\u0748', # syriac small low noon
+    '\u0749', # syriac small high jeem
+    '\u074A'  # syriac small high three dots with downwards arrow below
+]
+    # Normalize the text to decomposed Unicode form and remove combining characters
+    normalizedText = unicodedata.normalize('NFD', text)
+    filteredText = ''.join(char for char in normalizedText if char not in combiningChars)
+    # Line back to composed Unicode form
+    return unicodedata.normalize('NFC', filteredText)
 def regrexLine(line):
     line = regrexSub('title', line)
     line = regrexSub('sc', line)
@@ -481,23 +548,27 @@ def processDefinitionTemplates(line, tag, hasBar):
                 line=line#only get |1= and |2= for line, ignore rest
                 ofForm(tag, line)
 def processDerivedTerms(line, tag):
-    if tag[:3] == "col" or tag[:3] == "der":
+    if (tag[:3] == "col" or tag[:3] == "der") and tag[:7]!="der-top" and tag[:10]!="der-bottom" and tag[:10]!="col-bottom" and tag[:7]!="col-top":
         cutLines = line.split('|')
-        cutLineLang = cutLines[1].replace("{{", "").replace("}}", "")
-        cutLineI = 0
-        for cutLine in cutLines:
-            if cutLineI == 1:
-                cutLine = re.sub(r'[{{].+[}}].', '', cutLine).replace(r"/", "")
-                cutLine = re.sub(r'\].+\[', '|', cutLine)
-                cutLine = cutLine.replace("[", "").replace("]", "").replace("{{", "").replace("}}", "")
-                cutLine = [cutLine.split("|")]
-                cutLineJ = 0
-                for cutLine2 in cutLine:
-                    if len(cutLine2[cutLineJ]) > 0:
-                        clmem = "{{d|" + cutLineLang + "|"+ cutLine2[cutLineJ] + "}}"
-                        removeTag("d", clmem)
-                    cutLineJ += 1
-            cutLineI=1
+        try:
+            cutLineLang = cutLines[1].replace("{{", "").replace("}}", "")
+            cutLineI = 0
+            for cutLine in cutLines:
+                if cutLineI == 1:
+                    if "{" in cutLine:
+                        cutLine = re.sub(r'[{{].+[}}].', '', cutLine).replace(r"/", "")
+                    cutLine = re.sub(r'\].+\[', '|', cutLine)
+                    cutLine = cutLine.replace("[", "").replace("]", "").replace("{{", "").replace("}}", "")
+                    cutLineList = [cutLine.split("|")]
+                    cutLineJ = 0
+                    for cutLine2 in cutLineList:
+                        if len(cutLine2[cutLineJ]) > 0:
+                            clmem = "{{d|" + cutLineLang + "|"+ cutLine2[cutLineJ] + "}}"
+                            removeTag("d", clmem)
+                        cutLineJ += 1
+                cutLineI=1
+        except:
+            print(f"cutLines:{cutLines}")
     elif tag == "l":
         removeTag("d", line)
 def processDescendantTerms(line, tag):
@@ -507,7 +578,7 @@ def processDescendantTerms(line, tag):
         if len(line) >= 3:
             clmem = line[0] + "|" + line[1] + "|" + line[2] + "}}"
             removeTag("v", clmem)
-def processTranslations(line, tag, transPointerMem):
+def processTranslations(line, tag):
     #a normal translation
     global newPointer
     global newPage
@@ -530,40 +601,40 @@ def processTranslations(line, tag, transPointerMem):
         line = regrexSub('column-width', line)
         line = line.replace("}}", "").split("|")
         if len(line) >= 2:
-            transPointerMem = 1
             subtag1 = "<tr><trti>" + line[1] + r"</trti>"
-            subtag2 = "</tr>"
             newPage.insert(newPointer, subtag1)
             newPointer += 1
-            newPage.insert(newPointer, subtag2)
     #end of a translation
-    elif tag == "trans-bottom":
-        newPointer += transPointerMem
-        transPointerMem = 0
-    return transPointerMem
+    if tag == "trans-bottom":
+        insert = "</tr>"
+        newPage.insert(newPointer, insert)
+        newPointer += 1
+    if tag=="trans-see":
+        newPage.insert(newPointer, "<transee>")
+        newPointer += 1
+    if tag=="trans-top-also":
+        newPage.insert(newPointer, "<trans-top-also>")
+        newPointer += 1
 def inputData(cutLines, headerN):
     global newPage
     global newPointer
     global currentLangCode
-    currentLangCode = ""
+    currentLangCode, currentLangScript = "", ""
     #Set language and language codes so they can be later referred
     if len(headingList) > 0:
         currentLang = headingList[0]
-        currentLangCode = getLangCode(currentLang)
-    newPointerMem = 0
-    transPointerMem = 0
+        currentLangCode, currentLangScript = getLangCodeAndScript(currentLang)
+    newPointerMem = ""
     #If there are multiple etymologies add tags around them
     if headerN == 3:
         if (headingList[-1])[:9] == "Etymology":
             if len(headingList[-1]) > 9:
-                newPointerMem = 1
                 subtag1 = "<e" + headingList[-1][11:] + ">"
                 subtag2 = "</e" + headingList[-1][11:] + ">"
+                newPointerMem = subtag2
                 newPage.insert(newPointer, subtag1)
                 newPointer += 1
-                newPage.insert(newPointer, subtag2)
     for line in cutLines:
-        line = cleanTextForTags(line, currentLangCode)
         if line.find("{{") == -1 and line.find("[[") == -1:
             if headerN!=0:
                 if headerN == 3 and "Etymology" == headingList[-1]:
@@ -571,6 +642,7 @@ def inputData(cutLines, headerN):
                 else:
                     pass#print(headingList[-1])
         elif line[:2] == "{{":
+            line = cleanTextForTags(line, currentLangCode, currentLangScript)
             tag, hasBar = getTag(line)
             if tag == "also":
                 processAlsoTemplate(line, hasBar)
@@ -583,15 +655,20 @@ def inputData(cutLines, headerN):
                 elif "Descendants" == headingList[-1]:
                     processDescendantTerms(line, tag)
                 elif "Translations" == headingList[-1]:
-                    transPointerMem = processTranslations(line, tag, transPointerMem)
-    newPointer += newPointerMem
+                    processTranslations(line, tag)
+                #add compounds or idioms!
+        elif line[:2]=="[[":
+            pass#add support for derived terms or idioms
+    if newPointerMem != "":
+        newPage.insert(newPointer, newPointerMem)
+        newPointer += 1
 #gets a list and 
 def splitOnTemplates(subEntry):
     cutLines = []
     for line in subEntry:
         line = replaceQuotes(line)
         newLine = []
-        line = [line]## I need to properly format html tags like, for example <math></math>
+        line = [line]
         while len(line) > 0:
             line = lineCut(lineCut(lineCut(lineCut(line, "{{", 1), "[[", 1), "}}", 2), "]]", 2)
             newLine.append(line[0])
@@ -601,7 +678,7 @@ def splitOnTemplates(subEntry):
 def formatCase(subEntry, headerN):
     splitLines = splitOnTemplates(subEntry)
     enclosers, enclosersI, enclosersJ, cutLines = [], [], [], []
-    brackets=["{{", "}}", "[[", "]]"]
+    brackets = ["{{", "}}", "[[", "]]"]
     i = 0
     mem = ""
     for line in splitLines:
@@ -615,7 +692,7 @@ def formatCase(subEntry, headerN):
                 mem = mem + line
         else:
             for char in line:
-                sumChar = oldChar+char
+                sumChar = oldChar + char
                 if sumChar in brackets:
                     if sumChar == "{{" or sumChar == "[[":
                         enclosers.append(sumChar)
@@ -644,37 +721,53 @@ def formatCase(subEntry, headerN):
                 j += 1
         i += 1
     inputData(cutLines, headerN)
+def addTagToPage(tag):
+    global newPointer, newPointer
+    newPage.insert(newPointer, tag)
+    newPointer += 1
+
 def loopThruPage(page):
     page2 = page.split("\n")
     page2 = list(filter(('').__ne__, page2))
     subEntry = []
     urequalN, equalN2 = 0, 0
-    mode, urmode = "", ""
+    mode, urmode,ururmode = "", "", ""
     initnewPage() #initialise new page
-    global headingList
+    global headingList, newPage, newPointer
     headingList = []
     for line in page2:
-        line = re.sub(r'<.+>', '', line)
+        if "<" in line:
+            if ">" in line:
+                line = re.sub(r'<.+>', '', line)
         equalN = 0
-        for i in range(2,7):
-            if line[:i] == "======"[:i] and line[i] != "=":
-                if line.count("=") == i * 2:
-                    urequalN = equalN2
-                    equalN = i
-                    equalN2 = i
-                    urmode = mode
-                    mode = line.replace("=", "")
-        if equalN > 0:
-            if urequalN != 1:
-                if urequalN == 2:
-                    headingList = [urmode]
-                elif urequalN != 0:
-                    headingList.append(urmode)
-                formatCase(subEntry, urequalN)
-            subEntry = []
-
+        if line[:2] == "==":
+            for i in range(2,7):
+                if line[:i] == "======"[:i] and line[i] != "=":
+                    if line.count("=") == i * 2:
+                        urequalN = equalN2
+                        equalN = i
+                        equalN2 = i
+                        urmode = mode
+                        mode = line.replace("=", "")
+            if equalN > 0:
+                if urequalN != 1:
+                    if urequalN == 2:
+                        headingList = [urmode]
+                        if ururmode != "": #check if there any languages tags that haven't been closed of
+                            addTagToPage(r"</L1" + getLangCode(ururmode) + ">")#inserts the closing tag before inserting
+                        addTagToPage("<L2" + getLangCode(urmode) + ">") #inserts tags , e.g <Len> test.. </Len> around tags
+                        ururmode=urmode
+                    elif urequalN != 0:
+                        headingList.append(urmode)
+                    formatCase(subEntry, urequalN)
+                subEntry = []
+            else:
+                subEntry.append(line)
         else:
             subEntry.append(line)
+    addTagToPage(r"</L3" + getLangCode(urmode) + ">")
+    #newPointer += 1
+    
 #imports language data from 
 def importLangData():
     global langCode,langCanon,langCategory,langType,langFamilycode,langFamily,langSortkey,langAutodetect,langExceptional,langScriptCodes,langAltName,langStandardChars
@@ -693,16 +786,17 @@ def importLangData():
                 if len(langList) == 12:
                     langCode.append(langList[0])
                     langCanon.append(langList[1])
-                    langCategory.append(langList[2])
-                    langType.append(langList[3])
-                    langFamilycode.append(langList[4])
+                    #langCategory.append(langList[2])
+                    #langType.append(langList[3])
+                    #langFamilycode.append(langList[4])
                     langFamily.append(langList[5])
-                    langSortkey.append(langList[6])
-                    langAutodetect.append(langList[7])
-                    langExceptional.append(langList[8])
+                    #langSortkey.append(langList[6])
+                    #langAutodetect.append(langList[7])
+                    #langExceptional.append(langList[8])
                     langScriptCodes.append(langList[9])
-                    langAltName.append(langList[10])#also known as 'other names'
-                    langStandardChars.append(langList[11])
+                    #langAltName.append(langList[10])#also known as 'other names'
+                    #langStandardChars.append(langList[11])
+                    #don't need all lists so I am deleting some to help memory.
             lineI += 1
 newPage = []
 newPointer = ""
@@ -727,15 +821,19 @@ with open(r"xml//text.txt", 'r', encoding = 'utf8') as file:
             if ((tree.find('ns')).text) == '0': #if not a special nor talk page
                 #decided not to use usernames to credit users
                 page = (revision.find("text")).text#returnTag(revision,"text").text #different variable name since text is too vague + converted to string so it is easier
-                loopThruPage(page)
-                #if NewPage is filled, added it to the file
-                if len(newPage) > 3: 
-                    with open(r'xml//translate.txt', 'a', encoding = "utf-8") as file2:
-                        for fileLine in newPage:
-                            file2.write(f"{fileLine}\n")
-                    entryCount += 1
+                if not page is None:
+                    loopThruPage(page)
+                    #if NewPage is filled, added it to the file
+                    if len(newPage) > 1: 
+                        with open(r'xml//translate.txt', 'a', encoding = "utf-8") as file2:
+                            #file2.write(f"--{title}--\n")
+                            for fileLine in newPage:
+
+                                file2.write(f"{fileLine}\n")
+                            #file2.write(f"--/{title}--\n")
+                        entryCount += 1
         else:
             webpage.append(line)
-        if lineCount % 200000 == 0:
+        if lineCount % 1000000 == 0:
             print(str(entryCount) + "\t" + str(round((100 * lineCount) / 479268517, 2)) + str("%"))
             print("Title:\t\t" + title)
