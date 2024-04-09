@@ -604,10 +604,10 @@ def processTranslations(line, tag, transPointerMem):
             addTagToPage("<tr><trti>" + line[1] + r"</trti>")
             transPointerMem = r"</tr>"
     #end of a translation
-    elif tag=="trans-see":
+    elif tag == "trans-see":
         addTagToPage("<trsee>")
         transPointerMem = r"</trsee>"
-    elif tag=="trans-top-also":
+    elif tag == "trans-top-also":
         addTagToPage("<tralso>")
         transPointerMem = r"</tralso>"
         newPointer += 1
@@ -615,7 +615,7 @@ def processTranslations(line, tag, transPointerMem):
         addTagToPage(transPointerMem)
         transPointerMem = ""
     return transPointerMem
-def inputData(cutLines, headerN):
+def inputData(cutLines):
     global newPage
     global newPointer
     global currentLangCode
@@ -624,39 +624,45 @@ def inputData(cutLines, headerN):
     if len(headingList) > 0:
         currentLang = headingList[0]
         currentLangCode, currentLangScript = getLangCodeAndScript(currentLang)
-    newPointerMem, transPointerMem = ""
+    newPointerMem, transPointerMem = "", ""
     #If there are multiple etymologies add tags around them
-    if headerN == 3:
+    if len(headingList) > 0:
         if (headingList[-1])[:9] == "Etymology":
             if len(headingList[-1]) > 9:
-                subtag1 = "<e" + headingList[-1][11:] + ">"
-                subtag2 = "</e" + headingList[-1][11:] + ">"
-                newPointerMem = subtag2
-                newPage.insert(newPointer, subtag1)
-                newPointer += 1
+                subtag1 = "<e" + headingList[-1][10:] + ">"
+                subtag2 = "</e" + headingList[-1][10:] + ">"
+            else:
+                subtag1 = "<e>"
+                subtag2 = "</e>"
+            newPointerMem = subtag2
+            newPage.insert(newPointer, subtag1)
+            newPointer += 1
+    #print(f"hl:{headingList},title={title},cutLines={cutLines}")
     for line in cutLines:
         if line.find("{{") == -1 and line.find("[[") == -1:
-            if headerN!=0:
-                if headerN == 3 and "Etymology" == headingList[-1]:
-                    pass
-                else:
-                    pass#print(headingList[-1])
+            pass
+            # if headerN!=0:
+            #     if "Etymology" == headingList[-1][:9]:
+            #         pass
+            #     else:
+            #         pass#print(headingList[-1])
         elif line[:2] == "{{":
             line = cleanTextForTags(line, currentLangCode, currentLangScript)
             tag, hasBar = getTag(line)
-            if tag == "also":
-                processAlsoTemplate(line, hasBar)
-            elif headerN == 3:
-                processDefinitionTemplates(line, tag, hasBar)
-            elif headerN == 4: 
-                line = regrexLine(line)
-                if "Derived terms" == headingList[-1]:
-                    processDerivedTerms(line, tag)
+            line2 = regrexLine(line) # used for certain lines as it is redudant information for them!
+            if len(headingList) > 0:
+                if tag == "also":
+                    processAlsoTemplate(line, hasBar)
+                elif "Derived terms" == headingList[-1]:
+                    processDerivedTerms(line2, tag)
                 elif "Descendants" == headingList[-1]:
-                    processDescendantTerms(line, tag)
+                    processDescendantTerms(line2, tag)
                 elif "Translations" == headingList[-1]:
-                    transPointerMem = processTranslations(line, tag, transPointerMem)
-                #add compounds or idioms!
+                    transPointerMem = processTranslations(line2, tag, transPointerMem)
+                else:
+                    processDefinitionTemplates(line, tag, hasBar)
+                    #add compounds or idioms!
+            #print(f"hl:{headingList},title={title}")
         elif line[:2]=="[[":
             pass#add support for derived terms or idioms
     if newPointerMem != "":
@@ -675,7 +681,7 @@ def splitOnTemplates(subEntry):
             line.pop(0)
         cutLines = cutLines.copy() + newLine.copy()
     return cutLines
-def formatCase(subEntry, headerN):
+def formatCase(subEntry):
     splitLines = splitOnTemplates(subEntry)
     enclosers, enclosersI, enclosersJ, cutLines = [], [], [], []
     brackets = ["{{", "}}", "[[", "]]"]
@@ -720,7 +726,7 @@ def formatCase(subEntry, headerN):
                 oldChar = char
                 j += 1
         i += 1
-    inputData(cutLines, headerN)
+    inputData(cutLines)
 def addTagToPage(tag):
     global newPointer, newPointer
     newPage.insert(newPointer, tag)
@@ -752,20 +758,35 @@ def loopThruPage(page):
             if equalN > 0:
                 if urequalN != 1:
                     if urequalN == 2:
+                        if urmode == "":
+                            urmode = headingList[-1]
+                            addTagToPage(r"</L" + getLangCode(urmode) + ">")
+                        elif ururmode != "": #check if there any languages tags that haven't been closed of
+                            addTagToPage(r"</L" + getLangCode(ururmode) + ">")#inserts the closing tag before inserting
                         headingList = [urmode]
-                        if ururmode != "": #check if there any languages tags that haven't been closed of
-                            addTagToPage(r"</L1" + getLangCode(ururmode) + ">")#inserts the closing tag before inserting
-                        addTagToPage("<L2" + getLangCode(urmode) + ">") #inserts tags , e.g <Len> test.. </Len> around tags
+                        addTagToPage("<L" + getLangCode(urmode) + ">") #inserts tags , e.g <Len> test.. </Len> around tags
                         ururmode=urmode
                     elif urequalN != 0:
                         headingList.append(urmode)
-                    formatCase(subEntry, urequalN)
+                    formatCase(subEntry)
                 subEntry = []
             else:
                 subEntry.append(line)
         else:
             subEntry.append(line)
-    addTagToPage(r"</L3" + getLangCode(urmode) + ">")
+    if urmode == "":
+        if len(headingList)>0:
+            print(headingList)
+            urmode = headingList[-1]
+            addTagToPage(r"</L" + getLangCode(urmode) + ">")
+        else:
+            pass#not expecting a print
+            """ print("mistake")
+            print(f"urmode=[{urmode}],mode=[{mode}],title=[{title}]") """
+    elif ururmode != "": #check if there any languages tags that haven't been closed of
+        addTagToPage(r"</L" + getLangCode(ururmode) + ">")#inserts the closing tag before inserting
+    else:
+        addTagToPage(r"</L" + getLangCode(urmode) + ">")
     
 #imports language data from 
 def importLangData():
@@ -823,7 +844,7 @@ with open(r"xml//text.txt", 'r', encoding = 'utf8') as file:
                 if not page is None:
                     loopThruPage(page)
                     #if NewPage is filled, added it to the file
-                    if len(newPage) > 1: 
+                    if len(newPage) > 3: 
                         with open(r'xml//translate.txt', 'a', encoding = "utf-8") as file2:
                             #file2.write(f"--{title}--\n")
                             for fileLine in newPage:
