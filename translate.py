@@ -3,6 +3,37 @@ import xml.etree.ElementTree as ElementTree
 import re
 import unicodedata
 
+lowerAlphabet = "abcabcdefghijklmnopqrstuvwxyz"
+#converts unicode to filenames which are supported 
+def convertToFileName(text):
+    textMem = ""
+    for char in text:
+        if char in lowerAlphabet:
+            textMem = textMem + char + "_"
+        else:
+            textMem = textMem + str(ord(char)) + "_"
+    return textMem
+def convertFromFileName(text):
+    if text.find("_") == -1:
+        raise Exception("convertFromFileNameError")
+    else:
+        if text[-1]!="_":
+            raise Exception("convertFromFileNameError")
+        else:
+            textMem = ""
+            textMem2 = ""
+            char = ""
+            for i in range(0,len(text)):
+                char = text[i]
+                if char != "_":
+                    textMem2 = textMem2 + char    
+                else:
+                    if textMem2 in lowerAlphabet:
+                        textMem = textMem + textMem2    
+                    else:
+                        textMem = textMem + chr(int(textMem2))
+                    textMem2 = ""
+            return textMem
 #getLangCodeandScript returns the language code and also script, used in heading names. For Example English --> en, Latn
 def getLangCodeAndScript(inputLang):
     try:
@@ -26,9 +57,8 @@ def getLangCode(inputLang):
 def initnewPage():
     global newPage
     global newPointer
-    titletag = "<ti>" + title + "</ti>"
-    newPage = ["<pa>", titletag, "</pa>"]
-    newPointer = 2
+    newPage = []
+    newPointer = 0#possibly delete new pointer
 #such quotes are used in highlighting but I removed them   
 def replaceQuotes(line):
     line = line.replace("'''", "")
@@ -792,7 +822,7 @@ def loopThruPage(page):
 def importLangData():
     global langCode,langCanon,langCategory,langType,langFamilycode,langFamily,langSortkey,langAutodetect,langExceptional,langScriptCodes,langAltName,langStandardChars
     langCode,langCanon,langCategory,langType,langFamilycode,langFamily,langSortkey,langAutodetect,langExceptional,langScriptCodes,langAltName,langStandardChars=([] for i in range(12))
-    with open("lang.txt", 'r', encoding = "utf8") as langFile:
+    with open(r'lang.txt', 'r', encoding = "utf8") as langFile:
         lineI = -1
         for langLine in langFile:
             langLine = langLine.strip().split(";")
@@ -825,7 +855,8 @@ print("Welcome to Etymaps Translation Program\nCopyright ©2024 Alexander Samuel
 lineCount = 0
 webpage=[]
 entryCount = 0
-with open(r"xml//text.txt", 'r', encoding = 'utf8') as file:
+badFileNames = 0
+with open(r'xml//text.txt', 'r', encoding = 'utf8') as file:
     for line in file:
         lineCount += 1
         if "<page>" in line:
@@ -844,13 +875,17 @@ with open(r"xml//text.txt", 'r', encoding = 'utf8') as file:
                 if not page is None:
                     loopThruPage(page)
                     #if NewPage is filled, added it to the file
-                    if len(newPage) > 3: 
-                        with open(r'xml//translate.txt', 'a', encoding = "utf-8") as file2:
-                            #file2.write(f"--{title}--\n")
+                    if len(newPage) > 0:
+                        fileName = convertToFileName(title)
+                        #if length of fileName is greater than 250, insert a placeholder
+                        if len(fileName) > 250:
+                            with open(rf'badFileNames.txt', 'a', encoding = "utf-8") as file2:
+                                file2.write(f"{title}<{badFileNames}")
+                            fileName = str(badFileNames)
+                            badFileNames += 1
+                        with open(rf'bigfolder//{fileName}.txt', 'w', encoding = "utf-8") as file2:
                             for fileLine in newPage:
-
                                 file2.write(f"{fileLine}\n")
-                            #file2.write(f"--/{title}--\n")
                         entryCount += 1
         else:
             webpage.append(line)
