@@ -3,37 +3,6 @@ import xml.etree.ElementTree as ElementTree
 import re
 import unicodedata
 
-lowerAlphabet = "abcabcdefghijklmnopqrstuvwxyz"
-#converts unicode to filenames which are supported 
-def convertToFileName(text):
-    textMem = ""
-    for char in text:
-        if char in lowerAlphabet:
-            textMem = textMem + char + "_"
-        else:
-            textMem = textMem + str(ord(char)) + "_"
-    return textMem
-def convertFromFileName(text):
-    if text.find("_") == -1:
-        raise Exception("convertFromFileNameError")
-    else:
-        if text[-1]!="_":
-            raise Exception("convertFromFileNameError")
-        else:
-            textMem = ""
-            textMem2 = ""
-            char = ""
-            for i in range(0,len(text)):
-                char = text[i]
-                if char != "_":
-                    textMem2 = textMem2 + char    
-                else:
-                    if textMem2 in lowerAlphabet:
-                        textMem = textMem + textMem2    
-                    else:
-                        textMem = textMem + chr(int(textMem2))
-                    textMem2 = ""
-            return textMem
 #getLangCodeandScript returns the language code and also script, used in heading names. For Example English --> en, Latn
 def getLangCodeAndScript(inputLang):
     try:
@@ -631,19 +600,33 @@ def processTranslations(line, tag, transPointerMem):
         line = regrexSub('column-width', line)
         line = line.replace("}}", "").split("|")
         if len(line) >= 2:
-            addTagToPage("<tr><trti>" + line[1] + r"</trti>")
+            addTagToPage("<tr>\n<trti>" + line[1] + r"</trti>")
             transPointerMem = r"</tr>"
     #end of a translation
     elif tag == "trans-see":
-        addTagToPage("<trsee>")
-        transPointerMem = r"</trsee>"
+        line = regrexSub("id", line)
+        line = line.replace("}}", "").replace("{{","")
+        if line.find("|") != -1:
+            line = line[line.find("|")+1:]
+            addTagToPage("<tr>\n<trsee>" + line + r"</trsee>")
+            transPointerMem = r"</tr>"
+        #print(line)
+        transPointerMem = "</tr>"
     elif tag == "trans-top-also":
-        addTagToPage("<tralso>")
-        transPointerMem = r"</tralso>"
-        newPointer += 1
+        line = regrexSub('id', line)
+        line = regrexSub('column-width', line)
+        line = line.replace("}}", "").replace("{{","")
+        if line.find("|") != -1:
+            line = line[line.find("|")+1:]
+            addTagToPage("<tr>\n<trtopa>" + line + r"</trtopa>")
+            transPointerMem = r"</tr>"
+        print(line)
+        # addTagToPage("<tralso>")
+        # transPointerMem = r"</tralso>"
     elif tag == "trans-bottom":
-        addTagToPage(transPointerMem)
-        transPointerMem = ""
+        if len(transPointerMem) > 0:
+            addTagToPage(transPointerMem)
+            transPointerMem = ""
     return transPointerMem
 def inputData(cutLines):
     global newPage
@@ -876,16 +859,11 @@ with open(r'xml//text.txt', 'r', encoding = 'utf8') as file:
                     loopThruPage(page)
                     #if NewPage is filled, added it to the file
                     if len(newPage) > 0:
-                        fileName = convertToFileName(title)
-                        #if length of fileName is greater than 250, insert a placeholder
-                        if len(fileName) > 250:
-                            with open(rf'badFileNames.txt', 'a', encoding = "utf-8") as file2:
-                                file2.write(f"{title}<{badFileNames}")
-                            fileName = str(badFileNames)
-                            badFileNames += 1
-                        with open(rf'bigfolder//{fileName}.txt', 'w', encoding = "utf-8") as file2:
+                        with open(r"xml//translate.txt", 'a', encoding = "utf-8") as file2:
+                            file2.write(f"<pa>\n<ti>{title}</ti>\n")
                             for fileLine in newPage:
                                 file2.write(f"{fileLine}\n")
+                            file2.write("</pa>\n")
                         entryCount += 1
         else:
             webpage.append(line)
