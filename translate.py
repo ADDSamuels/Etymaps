@@ -98,7 +98,7 @@ def ofForm(tag, line):
     elif tag == "acronym of":
         removeTag("ofacr", line)
     elif tag == "active participle of":
-        removeTag("ofacr", line)
+        removeTag("ofact", line)
     elif tag == "agent noun of":
         removeTag("ofagn", line)
     elif tag == "akkadogram of":
@@ -120,7 +120,7 @@ def ofForm(tag, line):
     elif tag == "apocopic form of" or tag == "apoc of":
         removeTag("ofapo", line)
     elif tag == "archaic form of":
-        removeTag("ofarf", line)
+        removeTag("ofarc", line)
     elif tag == "archaic inflection of":
         removeTag("ofari", line)
     elif tag == "archaic spelling of" or tag == "archaic sp":
@@ -270,7 +270,7 @@ def ofForm(tag, line):
     elif tag == "ny-obs in Malawi":
         removeTag("ofny-", line)
     elif tag == "obsolete form of" or tag == "obs form":
-        removeTag("ofof", line)
+        removeTag("ofob", line)
     elif tag == "obsolete spelling of" or tag == "obs sp":
         removeTag("ofos", line)
     elif tag == "obsolete typography of" or tag == "obs typ":
@@ -296,7 +296,7 @@ def ofForm(tag, line):
     elif tag == "prothetic form of":
         removeTag("ofpf", line)
     elif tag == "pseudo-acronym of":
-        removeTag("ofps", line)
+        removeTag("ofpsa", line)
     elif tag == "pt-pronoun-with-l":
         removeTag("ofptl", line)
     elif tag == "pt-pronoun-with-n":
@@ -384,8 +384,8 @@ def etymTag(tag, line):
         removeTag("pc", line)
     elif tag == "descendant" or tag == "desc":
         removeTag("ds", line)
-    elif tag == "descendant tree" or tag == "desctree":
-        removeTag("dt", line)
+    #elif tag == "descendant tree" or tag == "desctree":
+    #    removeTag("dt", line)
     elif tag == "cognate" or tag == "cog":
         removeTag("cg", line)
     elif tag == "noncognate" or tag == "noncog" or tag == "ncog" or tag == "nc":
@@ -408,7 +408,7 @@ def etymTag(tag, line):
         removeTag("cf", line)
     elif tag == "suffix" or tag == "suf":
         removeTag("sf", line)
-    elif tag == "compound" or tag == "cp":
+    elif tag == "compound" or tag == "com":
         removeTag("cp", line)
     elif tag == "blend":
         removeTag("be", line)
@@ -438,6 +438,8 @@ def etymTag(tag, line):
         removeTag("cau", line)
     elif tag == "acronym":
         removeTag("acr", line)
+
+    #add m-self
 #since regular expressions are computationally complex, I first check, if said tag is in the line
 def regrexSub(tag, line):
     tag = "|" + tag + "="
@@ -610,7 +612,6 @@ def processTranslations(line, tag, transPointerMem):
             line = line[line.find("|")+1:]
             addTagToPage("<tr>\n<trsee>" + line + r"</trsee>")
             transPointerMem = r"</tr>"
-        #print(line)
         transPointerMem = "</tr>"
     elif tag == "trans-top-also":
         line = regrexSub('id', line)
@@ -620,7 +621,6 @@ def processTranslations(line, tag, transPointerMem):
             line = line[line.find("|")+1:]
             addTagToPage("<tr>\n<trtopa>" + line + r"</trtopa>")
             transPointerMem = r"</tr>"
-        print(line)
         # addTagToPage("<tralso>")
         # transPointerMem = r"</tralso>"
     elif tag == "trans-bottom":
@@ -854,7 +854,7 @@ with open(r'xml//text.txt', 'r', encoding = 'utf8') as file:
             revision = tree.find('revision')#returnTag(tree,"revision")
             if ((tree.find('ns')).text) == '0': #if not a special nor talk page
                 #decided not to use usernames to credit users
-                page = (revision.find("text")).text#returnTag(revision,"text").text #different variable name since text is too vague + converted to string so it is easier
+                page = (revision.find("text")).text#different variable name since text is too vague + converted to string so it is easier
                 if not page is None:
                     loopThruPage(page)
                     #if NewPage is filled, added it to the file
